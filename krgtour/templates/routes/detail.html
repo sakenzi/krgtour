@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ route.title }} — КарагандаТур{% endblock %}
+{% block meta_description %}{{ route.short_description|default:route.description|truncatewords:30 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+#routeDetailMap { height: 400px; border-radius: var(--radius-xl); }
+</style>
+{% endblock %}
+
+{% block main_class %}route-detail-page{% endblock %}
+
+{% block content %}
+<meta name="user-authenticated" content="{{ user.is_authenticated|yesno:'true,false' }}">
+
+<!-- Hero Image -->
+<div class="route-hero">
+    {% if route.cover_image %}
+    <img src="{{ route.cover_image.url }}" alt="{{ route.title }}">
+    {% else %}
+    <div style="background: linear-gradient(135deg, #1E0B4B, #4C1D95); width: 100%; height: 100%;"></div>
+    {% endif %}
+    <div class="route-hero-overlay">
+        <div class="route-hero-content">
+            <div class="breadcrumbs" style="color: rgba(255,255,255,0.7);">
+                <a href="/" style="color: rgba(255,255,255,0.7);">Главная</a>
+                <span class="breadcrumb-sep">/</span>
+                <a href="{% url 'routes:list' %}" style="color: rgba(255,255,255,0.7);">Маршруты</a>
+                <span class="breadcrumb-sep">/</span>
+                <span style="color: white;">{{ route.title }}</span>
+            </div>
+            <h1 class="route-hero-title">{{ route.title }}</h1>
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <span style="background: {{ route.difficulty_color }}; color: white; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700;">
+                    {{ route.difficulty_label }}
+                </span>
+                {% if route.category %}
+                <span style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">{{ route.category.name }}</span>
+                {% endif %}
+                {% if route.avg_rating > 0 %}
+                <span style="color: var(--accent); font-weight: 600;">⭐ {{ route.avg_rating }} ({{ route.review_count }} отзывов)</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Body -->
+<div class="route-detail-body">
+    <!-- Left: Main Content -->
+    <div class="route-main-content">
+
+        <!-- Route Map -->
+        {% if points %}
+        <section style="margin-bottom: 40px;">
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin-bottom: 16px;">🗺 Маршрут на карте</h2>
+            <div class="map-container">
+                <div id="routeDetailMap"
+                     data-points='{{ points_json|default:"[]" }}'
+                     data-difficulty="{{ route.difficulty }}">
+                </div>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                💡 Кликните на маркер для получения информации о точке
+            </p>
+        </section>
+        {% endif %}
+
+        <!-- Description -->
+        <section style="margin-bottom: 40px;">
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin-bottom: 16px;">О маршруте</h2>
+            <div style="line-height: 1.8; color: var(--text-secondary);">
+                {{ route.description|linebreaks }}
+            </div>
+        </section>
+
+        <!-- Route Points -->
+        {% if points %}
+        <section style="margin-bottom: 40px;">
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin-bottom: 20px;">📍 Точки маршрута</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for point in points %}
+                <div style="display: flex; gap: 16px; padding: 16px; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border);">
+                    <div style="width: 36px; height: 36px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0;">
+                        {{ forloop.counter }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">{{ point.name }}</div>
+                        {% if point.description %}
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ point.description }}</div>
+                        {% endif %}
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                            📍 {{ point.lat|floatformat:4 }}, {{ point.lng|floatformat:4 }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Gallery -->
+        {% if gallery %}
+        <section style="margin-bottom: 40px;">
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin-bottom: 16px;">📷 Галерея</h2>
+            <div class="gallery-grid">
+                {% for img in gallery %}
+                <div class="gallery-item" data-src="{{ img.image.url }}">
+                    <img src="{{ img.image.url }}" alt="{{ img.caption|default:route.title }}" loading="lazy">
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Reviews -->
+        <section id="reviews">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                <h2 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700;">
+                    💬 Отзывы
+                    {% if route.review_count > 0 %}
+                    <span style="font-size: 0.9rem; color: var(--text-muted); font-family: var(--font-body);">({{ route.review_count }})</span>
+                    {% endif %}
+                </h2>
+                {% if route.avg_rating > 0 %}
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--accent);">{{ route.avg_rating }}</span>
+                    <div>
+                        <div style="color: var(--accent);">★★★★★</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">{{ route.review_count }} отзывов</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Review Form -->
+            {% if review_form and user.is_authenticated %}
+            <div class="review-form-section" style="background: var(--bg-secondary); padding: 24px; border-radius: var(--radius-lg); margin-bottom: 24px; border: 1px solid var(--border);">
+                <h3 style="font-weight: 700; margin-bottom: 16px;">Оставить отзыв</h3>
+                <form id="reviewForm" action="{% url 'routes:add_review' route.slug %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label class="form-label">Оценка</label>
+                        <div class="star-rating">
+                            {% for i in "54321" %}
+                            <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" {% if forloop.first %}required{% endif %}>
+                            <label for="star{{ i }}">★</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ваш отзыв</label>
+                        <textarea name="comment" class="form-textarea" rows="4" placeholder="Поделитесь впечатлениями..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+                </form>
+            </div>
+            {% elif not user.is_authenticated %}
+            <div style="padding: 20px; border: 1.5px dashed var(--border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 24px;">
+                <p style="color: var(--text-secondary); margin-bottom: 12px;">Войдите, чтобы оставить отзыв</p>
+                <a href="{% url 'users:login' %}?next={{ request.path }}" class="btn btn-primary btn-sm">Войти</a>
+            </div>
+            {% elif user_review %}
+            <div style="padding: 16px; background: var(--purple-50); border-radius: var(--radius-lg); margin-bottom: 24px; border: 1px solid var(--purple-200);">
+                <p style="color: var(--primary); font-weight: 600;">✅ Вы уже оставили отзыв на этот маршрут</p>
+            </div>
+            {% endif %}
+
+            <!-- Reviews List -->
+            <div id="reviewsList">
+                {% for review in reviews %}
+                <div class="review-card">
+                    <div class="review-header">
+                        <img src="{{ review.user.avatar_url }}" alt="{{ review.user.username }}" class="review-avatar">
+                        <div class="review-meta">
+                            <div class="review-user">{{ review.user.get_full_name|default:review.user.username }}</div>
+                            <div class="review-date">{{ review.created_at|date:"d.m.Y" }}</div>
+                        </div>
+                        <div class="review-stars">
+                            {% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                        </div>
+                    </div>
+                    {% if review.title %}
+                    <p style="font-weight: 600; margin-bottom: 6px;">{{ review.title }}</p>
+                    {% endif %}
+                    <p class="review-text">{{ review.comment }}</p>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">💬</div>
+                    <p>Отзывов пока нет. Будьте первым!</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if reviews.has_other_pages %}
+            <div class="pagination">
+                {% if reviews.has_previous %}
+                <a href="?page={{ reviews.previous_page_number }}#reviews" class="page-btn">←</a>
+                {% endif %}
+                {% for i in reviews.paginator.page_range %}
+                <a href="?page={{ i }}#reviews" class="page-btn {% if reviews.number == i %}active{% endif %}">{{ i }}</a>
+                {% endfor %}
+                {% if reviews.has_next %}
+                <a href="?page={{ reviews.next_page_number }}#reviews" class="page-btn">→</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Recommended -->
+        {% if recommended %}
+        <section style="margin-top: 60px;">
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin-bottom: 24px;">🔮 Похожие маршруты</h2>
+            <div class="routes-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+                {% for r in recommended %}
+                {% include "partials/route_card.html" with route=r %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    <!-- Right: Booking Card -->
+    <div>
+        <div class="route-info-card">
+            <div class="info-price">{{ route.price_display }}</div>
+            <div class="info-price-label">{% if route.price %}за человека{% else %}бесплатный маршрут{% endif %}</div>
+
+            <div class="route-stats-grid">
+                <div class="route-stat-item">
+                    <div class="route-stat-value">{{ route.distance_km }} км</div>
+                    <div class="route-stat-label">Дистанция</div>
+                </div>
+                <div class="route-stat-item">
+                    <div class="route-stat-value">{{ route.duration_hours }} ч</div>
+                    <div class="route-stat-label">Длительность</div>
+                </div>
+                <div class="route-stat-item">
+                    <div class="route-stat-value">{{ route.difficulty_label }}</div>
+                    <div class="route-stat-label">Сложность</div>
+                </div>
+                <div class="route-stat-item">
+                    <div class="route-stat-value">{{ route.max_group_size }}</div>
+                    <div class="route-stat-label">Макс. группа</div>
+                </div>
+            </div>
+
+            {% if user.is_authenticated %}
+            <a href="{% url 'bookings:create' route.slug %}" class="btn btn-primary" style="width: 100%; margin-bottom: 12px; justify-content: center; padding: 14px;">
+                📅 Забронировать тур
+            </a>
+            <button
+                class="btn btn-ghost {% if is_favorite %}active{% endif %}"
+                style="width: 100%; justify-content: center; margin-bottom: 16px;"
+                data-favorite-url="{% url 'routes:toggle_favorite' route.slug %}"
+            >
+                <span class="fav-icon">{% if is_favorite %}❤️{% else %}🤍{% endif %}</span>
+                {% if is_favorite %}В избранном{% else %}Добавить в избранное{% endif %}
+            </button>
+            {% else %}
+            <a href="{% url 'users:login' %}?next={{ request.path }}" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 14px; margin-bottom: 12px;">
+                Войдите для бронирования
+            </a>
+            {% endif %}
+
+            <!-- Route info list -->
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; padding-top: 16px; border-top: 1px solid var(--border);">
+                {% if route.min_age %}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">Мин. возраст</span>
+                    <span style="font-weight: 600;">{{ route.min_age }}+ лет</span>
+                </div>
+                {% endif %}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">Просмотры</span>
+                    <span style="font-weight: 600;">{{ route.view_count|intcomma }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">Бронирований</span>
+                    <span style="font-weight: 600;">{{ route.booking_count|intcomma }}</span>
+                </div>
+            </div>
+
+            <!-- Tags -->
+            {% if route.tags %}
+            <div class="tags-list" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                {% for tag in route.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+// Initialize route detail map
+document.addEventListener('DOMContentLoaded', function() {
+    const mapEl = document.getElementById('routeDetailMap');
+    if (!mapEl) return;
+
+    const points = {{ points|safe }};
+    const difficulty = '{{ route.difficulty }}';
+
+    if (points.length > 0) {
+        KGDMap.initRouteDetailMap('routeDetailMap', { points, difficulty });
+    }
+});
+</script>
+{% endblock %}

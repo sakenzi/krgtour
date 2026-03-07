@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Интересные места — КарагандаТур{% endblock %}
+
+{% block extra_css %}
+<style>
+.places-page { margin-top: var(--nav-height); padding: 40px 24px; }
+#placesMap { height: 280px; border-radius: var(--radius-lg); margin-bottom: 32px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container places-page">
+    <div class="breadcrumbs" style="margin-bottom: 20px;">
+        <a href="/">Главная</a><span class="breadcrumb-sep">/</span><span>Места</span>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px;">
+        <div>
+            <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;">📍 Интересные места</h1>
+            <p style="color: var(--text-secondary); margin-top: 4px;">Достопримечательности Карагандинского региона</p>
+        </div>
+        <form method="get" style="display: flex; gap: 8px;">
+            <div style="position: relative;">
+                <input type="text" name="q" value="{{ query }}" placeholder="Поиск мест..."
+                       class="form-input" style="padding-left: 36px; width: 240px;">
+                <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%);">🔍</span>
+            </div>
+            <button type="submit" class="btn btn-primary">Найти</button>
+        </form>
+    </div>
+
+    <!-- Map -->
+    <div class="map-container" style="margin-bottom: 32px;">
+        <div id="placesMap"></div>
+    </div>
+
+    <!-- Category chips -->
+    <div class="categories-scroll" style="margin-bottom: 28px;">
+        <a href="{% url 'places:list' %}{% if query %}?q={{ query }}{% endif %}" class="category-chip {% if not current_category %}active{% endif %}">🌐 Все</a>
+        {% for cat in categories %}
+        <a href="{% url 'places:list' %}?category={{ cat.slug }}{% if query %}&q={{ query }}{% endif %}"
+           class="category-chip {% if current_category == cat.slug %}active{% endif %}">
+            {{ cat.icon }} {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Grid -->
+    {% if places %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+        {% for place in places %}
+        <article class="card">
+            <a href="{{ place.get_absolute_url }}">
+                <div class="card-image">
+                    {% if place.cover_image %}
+                    <img src="{{ place.cover_image.url }}" alt="{{ place.name }}" loading="lazy">
+                    {% else %}
+                    <div style="background: linear-gradient(135deg, #1E0B4B, #4C1D95); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.5rem;">
+                        {{ place.category.icon|default:"📍" }}
+                    </div>
+                    {% endif %}
+                    {% if place.category %}
+                    <span class="card-badge" style="background: {{ place.category.color }}20; color: {{ place.category.color }};">{{ place.category.icon }} {{ place.category.name }}</span>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    <button class="card-favorite-btn" data-favorite-url="{% url 'places:toggle_favorite' place.slug %}" title="В избранное">
+                        <span class="fav-icon">🤍</span>
+                    </button>
+                    {% endif %}
+                </div>
+            </a>
+            <div class="card-body">
+                <h3 class="card-title"><a href="{{ place.get_absolute_url }}" style="color:inherit;">{{ place.name }}</a></h3>
+                {% if place.short_description %}
+                <p class="card-desc">{{ place.short_description }}</p>
+                {% else %}
+                <p class="card-desc">{{ place.description|truncatewords:18 }}</p>
+                {% endif %}
+                <div class="card-meta">
+                    {% if place.avg_rating > 0 %}<span class="card-rating">⭐ {{ place.avg_rating }}</span>{% endif %}
+                    {% if place.address %}<span>📍 {{ place.address|truncatechars:30 }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div style="font-size: 0.82rem; color: var(--text-muted);">
+                    {% if place.entry_price %}💰 {{ place.entry_price|intcomma }} ₸{% else %}🆓 Бесплатно{% endif %}
+                </div>
+                <a href="{{ place.get_absolute_url }}" class="btn btn-primary btn-sm">Подробнее →</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    {% if places.has_other_pages %}
+    <div class="pagination">
+        {% if places.has_previous %}<a href="?page={{ places.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="page-btn">←</a>{% endif %}
+        {% for i in places.paginator.page_range %}
+        <a href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}" class="page-btn {% if places.number == i %}active{% endif %}">{{ i }}</a>
+        {% endfor %}
+        {% if places.has_next %}<a href="?page={{ places.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="page-btn">→</a>{% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
+        <div style="font-size: 4rem; margin-bottom: 16px;">📍</div>
+        <h2 style="font-family: var(--font-display);">Места не найдены</h2>
+        <a href="{% url 'places:list' %}" class="btn btn-primary" style="margin-top: 20px;">Показать все</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const map = KGDMap.initMap('placesMap', { zoom: 10 });
+    fetch('/places/api/geojson/')
+        .then(r => r.json())
+        .then(geojson => {
+            const places = geojson.features.map(f => ({
+                ...f.properties,
+                lat: f.geometry.coordinates[1],
+                lng: f.geometry.coordinates[0],
+            }));
+            KGDMap.addPlacesToMap(map, places);
+        }).catch(() => {});
+});
+</script>
+{% endblock %}

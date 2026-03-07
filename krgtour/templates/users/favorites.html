@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Избранное — КарагандаТур{% endblock %}
+
+{% block content %}
+<div style="margin-top: var(--nav-height); padding: 40px 24px; background: var(--bg-secondary); min-height: calc(100vh - var(--nav-height));">
+    <div class="container" style="max-width: 1100px;">
+
+        <div class="breadcrumbs" style="margin-bottom: 24px;">
+            <a href="/">Главная</a>
+            <span class="breadcrumb-sep">/</span>
+            <a href="{% url 'users:profile' %}">Профиль</a>
+            <span class="breadcrumb-sep">/</span>
+            <span>Избранное</span>
+        </div>
+
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;">❤️ Избранное</h1>
+
+        <!-- Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 32px; border-bottom: 2px solid var(--border); padding-bottom: 0;">
+            <button class="fav-tab active" data-tab="routes" style="padding: 10px 20px; border: none; background: none; font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid var(--primary); color: var(--primary); margin-bottom: -2px;">
+                🏔 Маршруты ({{ route_favorites|length }})
+            </button>
+            <button class="fav-tab" data-tab="places" style="padding: 10px 20px; border: none; background: none; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px;">
+                📍 Места ({{ place_favorites|length }})
+            </button>
+        </div>
+
+        <!-- Routes Tab -->
+        <div id="tab-routes">
+            {% if route_favorites %}
+            <div class="routes-grid">
+                {% for fav in route_favorites %}
+                {% include "partials/route_card.html" with route=fav.route %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                <div style="font-size: 4rem; margin-bottom: 16px;">🏔</div>
+                <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;">Нет избранных маршрутов</h2>
+                <p style="margin-bottom: 24px;">Добавляйте маршруты в избранное, нажимая 🤍 на карточке</p>
+                <a href="{% url 'routes:list' %}" class="btn btn-primary">Найти маршруты</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Places Tab -->
+        <div id="tab-places" style="display: none;">
+            {% if place_favorites %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                {% for fav in place_favorites %}
+                <div class="card">
+                    <a href="{{ fav.place.get_absolute_url }}">
+                        <div class="card-image">
+                            {% if fav.place.cover_image %}
+                            <img src="{{ fav.place.cover_image.url }}" alt="{{ fav.place.name }}" loading="lazy">
+                            {% else %}
+                            <div style="background: linear-gradient(135deg, var(--purple-800), var(--purple-600)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.5rem;">📍</div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    <div class="card-body">
+                        <h3 class="card-title"><a href="{{ fav.place.get_absolute_url }}" style="color:inherit;">{{ fav.place.name }}</a></h3>
+                        {% if fav.place.category %}<span class="tag">{{ fav.place.category.name }}</span>{% endif %}
+                        <div class="card-meta" style="margin-top:10px;">
+                            {% if fav.place.avg_rating > 0 %}<span class="card-rating">⭐ {{ fav.place.avg_rating }}</span>{% endif %}
+                            {% if fav.place.address %}<span>📍 {{ fav.place.address }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                <div style="font-size: 4rem; margin-bottom: 16px;">📍</div>
+                <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;">Нет избранных мест</h2>
+                <p style="margin-bottom: 24px;">Исследуйте интересные места и добавляйте в избранное</p>
+                <a href="{% url 'places:list' %}" class="btn btn-primary">Найти места</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.fav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.fav-tab').forEach(t => {
+            t.style.borderBottomColor = 'transparent';
+            t.style.color = 'var(--text-secondary)';
+            t.style.fontWeight = '500';
+            t.classList.remove('active');
+        });
+        tab.style.borderBottomColor = 'var(--primary)';
+        tab.style.color = 'var(--primary)';
+        tab.style.fontWeight = '600';
+        tab.classList.add('active');
+
+        document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+        document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+    });
+});
+</script>
+{% endblock %}

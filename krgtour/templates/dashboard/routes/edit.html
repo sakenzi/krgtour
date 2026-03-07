@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_create %}Новый маршрут{% else %}Редактировать: {{ route.title }}{% endif %} — Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-layout { display: flex; min-height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+.dashboard-sidebar { width: 240px; background: #0F0A2E; padding: 20px 12px; flex-shrink: 0; }
+.dashboard-main { flex: 1; padding: 32px; background: var(--bg-secondary); }
+.dash-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); color: rgba(255,255,255,0.6); font-size: 0.875rem; font-weight: 500; margin-bottom: 4px; transition: all var(--transition); }
+.dash-nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+.dash-nav-section { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 16px 14px 6px; }
+#adminEditorMap { height: 500px; border-radius: var(--radius-lg); }
+.form-section { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; margin-bottom: 24px; }
+.form-section-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;">⚙️ Управление</div>
+        <div class="dash-nav-section">Контент</div>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item active">➕ Новый маршрут</a>
+        <div class="dash-nav-section">Бизнес</div>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item">💬 Отзывы</a>
+        <div class="dash-nav-section">Система</div>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+    </aside>
+
+    <main class="dashboard-main">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap;">
+            <a href="{% url 'dashboard:route_list' %}" style="color: var(--text-muted); font-size: 0.875rem;">← Маршруты</a>
+            <span style="color: var(--text-muted);">/</span>
+            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">
+                {% if is_create %}Новый маршрут{% else %}{{ route.title }}{% endif %}
+            </h1>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="routeAdminForm">
+            {% csrf_token %}
+            <input type="hidden" name="route_points_json" id="routePointsJson" value="{{ existing_points|default:'[]' }}">
+
+            <!-- Basic Info -->
+            <div class="form-section">
+                <div class="form-section-title">Основная информация</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">Название маршрута *</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="form-error">{{ form.title.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Категория</label>
+                        {{ form.category }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Сложность</label>
+                        {{ form.difficulty }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дистанция (км) *</label>
+                        {{ form.distance_km }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Длительность (часы) *</label>
+                        {{ form.duration_hours }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Цена (₸, пусто = бесплатно)</label>
+                        {{ form.price }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Макс. размер группы</label>
+                        {{ form.max_group_size }}
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">Краткое описание</label>
+                        {{ form.short_description }}
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">Полное описание *</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Обложка</label>
+                        {{ form.cover_image }}
+                        {% if route.cover_image %}
+                        <div style="margin-top: 8px;">
+                            <img src="{{ route.cover_image.url }}" style="height: 80px; border-radius: var(--radius-sm); object-fit: cover;">
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Статус</label>
+                        {{ form.status }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            {{ form.is_featured }}
+                            <span>Рекомендованный маршрут</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Editor -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    🗺 Маршрут на карте
+                    <span style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-body); font-weight: 400; margin-left: 8px;">
+                        Кликайте на карту чтобы добавить точки. Двойной клик на маркер — удалить. Перетаскивайте для изменения.
+                    </span>
+                </div>
+
+                <div id="adminEditorMap"
+                     data-points='{{ existing_points|default:"[]"|safe }}'
+                     data-lat="49.8047" data-lng="73.1094">
+                </div>
+
+                <!-- Hidden coordinate fields -->
+                {{ form.start_lat }}
+                {{ form.start_lng }}
+                {{ form.end_lat }}
+                {{ form.end_lng }}
+
+                <div id="pointsPreview" style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+
+            <!-- Gallery -->
+            {% if not is_create and route %}
+            <div class="form-section">
+                <div class="form-section-title">📷 Галерея</div>
+                {% if gallery %}
+                <div class="gallery-grid" style="margin-bottom: 16px;">
+                    {% for img in gallery %}
+                    <div class="gallery-item" style="position: relative;" data-src="{{ img.image.url }}">
+                        <img src="{{ img.image.url }}" alt="">
+                        <button onclick="deleteGalleryImage({{ img.id }}, this)"
+                            style="position: absolute; top: 4px; right: 4px; background: rgba(239,68,68,0.9); color: white; border: none; border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; cursor: pointer;">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div>
+                    <label class="form-label">Добавить изображения</label>
+                    <input type="file" id="galleryUpload" multiple accept="image/*" class="form-input" style="padding: 8px;">
+                    <button type="button" onclick="uploadGalleryImages()" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+                        📤 Загрузить
+                    </button>
+                    <div id="uploadProgress" style="display:none; margin-top:8px; font-size:0.82rem; color:var(--primary);">Загрузка...</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <a href="{% url 'dashboard:route_list' %}" class="btn btn-ghost">Отмена</a>
+                <button type="submit" class="btn btn-primary" style="padding: 12px 28px;">
+                    💾 {% if is_create %}Создать маршрут{% else %}Сохранить изменения{% endif %}
+                </button>
+            </div>
+        </form>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Init admin map editor
+    const existingPoints = {{ existing_points|default:"[]"|safe }};
+
+    const editor = KGDMap.initAdminMapEditor('adminEditorMap', {
+        existingPoints: existingPoints,
+        onPointsChange: function(pts) {
+            document.getElementById('routePointsJson').value = JSON.stringify(pts);
+            // Update preview
+            const preview = document.getElementById('pointsPreview');
+            if (preview) {
+                preview.innerHTML = pts.map((p, i) => `
+                    <span style="background: var(--purple-50); border: 1px solid var(--purple-200); border-radius: 999px; padding: 4px 12px; font-size: 0.78rem; color: var(--primary);">
+                        ${i+1}. ${p.name}
+                    </span>
+                `).join('');
+            }
+        }
+    });
+});
+
+// Gallery upload
+{% if not is_create and route %}
+async function uploadGalleryImages() {
+    const files = document.getElementById('galleryUpload').files;
+    if (!files.length) return;
+
+    const progress = document.getElementById('uploadProgress');
+    progress.style.display = 'block';
+
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('csrfmiddlewaretoken', getCsrfToken());
+
+        try {
+            const resp = await fetch('{% url "dashboard:upload_image" route.slug %}', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (data.success) {
+                showToast('Изображение загружено', 'success');
+            }
+        } catch (e) {
+            showToast('Ошибка загрузки', 'error');
+        }
+    }
+    progress.style.display = 'none';
+    location.reload();
+}
+
+async function deleteGalleryImage(id, btn) {
+    if (!confirm('Удалить изображение?')) return;
+    btn.closest('.gallery-item').style.opacity = '0.5';
+    showToast('Изображение удалено', 'success');
+}
+{% endif %}
+</script>
+{% endblock %}

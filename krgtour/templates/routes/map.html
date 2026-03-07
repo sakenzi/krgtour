@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Карта маршрутов — КарагандаТур{% endblock %}
+
+{% block extra_css %}
+<style>
+body { overflow: hidden; }
+.main-content { height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+#fullPageMap { height: 100%; width: 100%; }
+.map-sidebar {
+    position: fixed; top: var(--nav-height); left: 0; bottom: 0;
+    width: 360px; background: white; box-shadow: var(--shadow-xl);
+    z-index: 500; display: flex; flex-direction: column;
+    transform: translateX(0); transition: transform var(--transition-slow);
+}
+.map-sidebar.collapsed { transform: translateX(-360px); }
+.sidebar-toggle {
+    position: fixed; top: calc(var(--nav-height) + 16px); left: 16px;
+    z-index: 600; width: 44px; height: 44px;
+    background: white; border-radius: 50%; border: 1px solid var(--border);
+    box-shadow: var(--shadow-md); cursor: pointer; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: left var(--transition-slow);
+}
+.sidebar-toggle.open { left: 376px; }
+.sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.sidebar-search { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.sidebar-filters { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0; }
+.sidebar-results { flex: 1; overflow-y: auto; padding: 12px; }
+.sidebar-route-item {
+    padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border);
+    margin-bottom: 8px; cursor: pointer; transition: all var(--transition);
+    display: flex; gap: 12px;
+}
+.sidebar-route-item:hover { border-color: var(--primary); background: var(--purple-50); }
+.sidebar-route-thumb { width: 64px; height: 64px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; background: var(--bg-tertiary); }
+.sidebar-route-info { flex: 1; min-width: 0; }
+.sidebar-route-title { font-weight: 600; font-size: 0.875rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-route-meta { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 8px; }
+</style>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block content %}
+<!-- Sidebar Toggle -->
+<button class="sidebar-toggle open" id="sidebarToggle" title="Скрыть/показать панель">☰</button>
+
+<!-- Sidebar -->
+<div class="map-sidebar" id="mapSidebar">
+    <div class="sidebar-header">
+        <h2 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">🗺 Карта маршрутов</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Кликните на маркер для информации</p>
+    </div>
+
+    <div class="sidebar-search">
+        <div style="position: relative;">
+            <input type="text" id="sidebarSearch" class="form-input" placeholder="Поиск маршрутов..."
+                   style="padding-left: 36px; padding-top: 9px; padding-bottom: 9px; font-size: 0.85rem;">
+            <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:0.9rem;">🔍</span>
+        </div>
+    </div>
+
+    <div class="sidebar-filters">
+        <button class="category-chip active" data-filter="">Все</button>
+        <button class="category-chip" data-filter="easy" style="color: var(--success);">🟢 Лёгкие</button>
+        <button class="category-chip" data-filter="medium" style="color: var(--warning);">🟡 Средние</button>
+        <button class="category-chip" data-filter="hard" style="color: var(--error);">🔴 Сложные</button>
+        <button class="category-chip" data-filter="places">📍 Места</button>
+    </div>
+
+    <div class="sidebar-results" id="sidebarResults">
+        <!-- Populated by JS -->
+    </div>
+</div>
+
+<!-- Map -->
+<div id="fullPageMap"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+(function() {
+    const routesData = {{ routes|safe }};
+    const placesData = {{ places|safe }};
+
+    // Init map
+    const map = KGDMap.initMap('fullPageMap', {
+        center: [{{ map_lat }}, {{ map_lng }}],
+        zoom: {{ map_zoom }},
+    });
+
+    // Add to map
+    const routeMarkers = [];
+    const placeMarkers = [];
+
+    routesData.forEach(route => {
+        if (!route.start_lat) return;
+        const marker = L.marker([route.start_lat, route.start_lng], {
+            icon: createMarkerIcon(route.difficulty, '🏔')
+        });
+        const popup = `
+            <div class="map-popup">
+                <div class="map-popup-title">${route.title}</div>
+                <div class="map-popup-meta">
+                    <span>📏 ${route.distance_km} км</span>
+                    <span>⏱ ${route.duration_hours} ч</span>
+                    ${route.avg_rating ? `<span>⭐ ${route.avg_rating}</span>` : ''}
+                </div>
+                <a href="/routes/${route.slug}/" class="map-popup-link">Открыть →</a>
+            </div>`;
+        marker.bindPopup(popup, { closeButton: false });
+        marker.routeData = route;
+        marker.addTo(map);
+        routeMarkers.push(marker);
+    });
+
+    placesData.forEach(place => {
+        if (!place.lat) return;
+        const marker = L.marker([place.lat, place.lng], {
+            icon: createPlaceMarkerIcon(place.icon || '📍')
+        });
+        const popup = `
+            <div class="map-popup">
+                <div class="map-popup-title">${place.name}</div>
+                <div class="map-popup-meta"><span>${place.category_name || ''}</span></div>
+                <a href="/places/${place.slug}/" class="map-popup-link">Подробнее →</a>
+            </div>`;
+        marker.bindPopup(popup, { closeButton: false });
+        marker.placeData = place;
+        marker.addTo(map);
+        placeMarkers.push(marker);
+    });
+
+    function createMarkerIcon(difficulty, emoji) {
+        const colors = { easy: '#10B981', medium: '#F59E0B', hard: '#EF4444', expert: '#7C3AED' };
+        const color = colors[difficulty] || '#7C3AED';
+        return L.divIcon({
+            className: '',
+            html: `<div style="width:36px;height:36px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);color:white;font-size:14px;">${emoji}</span></div>`,
+            iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36]
+        });
+    }
+
+    function createPlaceMarkerIcon(emoji) {
+        return L.divIcon({
+            className: '',
+            html: `<div style="width:30px;height:30px;background:white;border-radius:50%;border:2px solid #7C3AED;box-shadow:0 2px 6px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;">${emoji}</div>`,
+            iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -30]
+        });
+    }
+
+    // Sidebar population
+    function renderSidebar(routes) {
+        const container = document.getElementById('sidebarResults');
+        if (!routes.length) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Ничего не найдено</div>';
+            return;
+        }
+        container.innerHTML = routes.map(r => `
+            <div class="sidebar-route-item" data-slug="${r.slug}" onclick="window.location='/routes/${r.slug}/'">
+                <div class="sidebar-route-thumb" style="background: linear-gradient(135deg, #1E0B4B, #4C1D95); display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🏔</div>
+                <div class="sidebar-route-info">
+                    <div class="sidebar-route-title">${r.title}</div>
+                    <div class="sidebar-route-meta">
+                        <span>📏 ${r.distance_km} км</span>
+                        <span>⏱ ${r.duration_hours} ч</span>
+                    </div>
+                    ${r.avg_rating ? `<div style="color:var(--accent);font-size:0.78rem;margin-top:2px;">⭐ ${r.avg_rating}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderSidebar(routesData);
+
+    // Search
+    document.getElementById('sidebarSearch').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        const filtered = routesData.filter(r =>
+            r.title.toLowerCase().includes(q)
+        );
+        renderSidebar(filtered);
+    });
+
+    // Difficulty filter
+    document.querySelectorAll('.sidebar-filters .category-chip').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.sidebar-filters .category-chip').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            if (filter === 'places') {
+                renderSidebar([]);
+                placeMarkers.forEach(m => m.addTo(map));
+                routeMarkers.forEach(m => map.removeLayer(m));
+            } else {
+                const filtered = filter ? routesData.filter(r => r.difficulty === filter) : routesData;
+                renderSidebar(filtered);
+                routeMarkers.forEach(m => map.addLayer(m));
+                placeMarkers.forEach(m => map.removeLayer(m));
+            }
+        });
+    });
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('mapSidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('open');
+        setTimeout(() => map.invalidateSize(), 350);
+    });
+})();
+</script>
+{% endblock %}

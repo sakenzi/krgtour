@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Маршруты — КарагандаТур{% endblock %}
+
+{% block extra_css %}
+<style>
+.list-page { margin-top: var(--nav-height); padding: 40px 24px; }
+#listMap { height: 300px; border-radius: var(--radius-lg); margin-bottom: 32px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container list-page">
+    <!-- Header -->
+    <div style="margin-bottom: 32px;">
+        <div class="breadcrumbs">
+            <a href="/">Главная</a>
+            <span class="breadcrumb-sep">/</span>
+            <span>Маршруты</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div>
+                <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;">Все маршруты</h1>
+                <p style="color: var(--text-secondary); margin-top:4px;">
+                    {% if query %}Результаты поиска: "{{ query }}" — {% endif %}
+                    Найдено {{ total_count }} маршрутов
+                </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label style="font-size:0.875rem; color:var(--text-muted);">Сортировка:</label>
+                <select id="sortSelect" class="form-select" style="width:auto; padding: 8px 36px 8px 12px;">
+                    <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>Новые</option>
+                    <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Популярные</option>
+                    <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>По рейтингу</option>
+                    <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Цена ↑</option>
+                    <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Цена ↓</option>
+                    <option value="distance" {% if current_sort == 'distance' %}selected{% endif %}>По дистанции</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini Map -->
+    <div class="map-container" style="margin-bottom: 32px;">
+        <div id="listMap" data-routes="{{ map_routes|default:'[]' }}"></div>
+    </div>
+
+    <!-- Categories -->
+    <div class="categories-scroll" style="margin-bottom: 24px;">
+        <a href="{% url 'routes:list' %}{% if query %}?q={{ query }}{% endif %}"
+           class="category-chip {% if not current_category %}active{% endif %}">
+            🌐 Все
+        </a>
+        {% for cat in categories %}
+        <a href="{% url 'routes:list' %}?category={{ cat.slug }}{% if query %}&q={{ query }}{% endif %}"
+           class="category-chip {% if current_category == cat.slug %}active{% endif %}">
+            {{ cat.name }}
+            <span style="color: var(--text-muted); font-size: 0.78rem;">{{ cat.route_count }}</span>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="list-layout">
+        <!-- Filters Sidebar -->
+        <aside>
+            <div class="filters-panel">
+                <form method="get" id="filtersForm">
+                    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+                    {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 16px;">Фильтры</h3>
+                        <div style="position: relative;">
+                            <input type="text" name="q" value="{{ query }}" placeholder="Поиск маршрутов..."
+                                   class="form-input" style="padding-left: 40px;">
+                            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%);">🔍</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <div class="filter-title">Сложность</div>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="radio" name="difficulty" value="" class="filter-auto-submit"
+                                       {% if not current_difficulty %}checked{% endif %}>
+                                <span>Любая</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="difficulty" value="easy" class="filter-auto-submit"
+                                       {% if current_difficulty == 'easy' %}checked{% endif %}>
+                                <span style="color: var(--success);">🟢 Лёгкий</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="difficulty" value="medium" class="filter-auto-submit"
+                                       {% if current_difficulty == 'medium' %}checked{% endif %}>
+                                <span style="color: var(--warning);">🟡 Средний</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="difficulty" value="hard" class="filter-auto-submit"
+                                       {% if current_difficulty == 'hard' %}checked{% endif %}>
+                                <span style="color: var(--error);">🔴 Сложный</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="difficulty" value="expert" class="filter-auto-submit"
+                                       {% if current_difficulty == 'expert' %}checked{% endif %}>
+                                <span style="color: var(--primary);">⚡ Экстрим</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <div class="filter-title">Дистанция (км)</div>
+                        <div class="range-inputs">
+                            <input type="number" name="min_distance" placeholder="От"
+                                   value="{{ request.GET.min_distance }}" min="0" step="1" class="form-input">
+                            <input type="number" name="max_distance" placeholder="До"
+                                   value="{{ request.GET.max_distance }}" min="0" step="1" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <div class="filter-title">Цена</div>
+                        <label class="filter-option" style="margin-bottom:8px;">
+                            <input type="checkbox" name="free_only" value="1"
+                                   {% if request.GET.free_only %}checked{% endif %}
+                                   class="filter-auto-submit">
+                            <span>Только бесплатные</span>
+                        </label>
+                        <div>
+                            <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px; display:block;">Макс. цена (₸)</label>
+                            <input type="number" name="max_price" placeholder="Любая"
+                                   value="{{ request.GET.max_price }}" min="0" step="500" class="form-input">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                        Применить
+                    </button>
+                    {% if query or current_category or current_difficulty or request.GET.max_price %}
+                    <a href="{% url 'routes:list' %}" class="btn btn-ghost" style="width:100%; justify-content:center; margin-top:8px;">
+                        Сбросить фильтры
+                    </a>
+                    {% endif %}
+                </form>
+            </div>
+        </aside>
+
+        <!-- Routes Grid -->
+        <div>
+            {% if routes %}
+            <div class="routes-grid">
+                {% for route in routes %}
+                {% include "partials/route_card.html" with route=route %}
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if routes.has_other_pages %}
+            <div class="pagination">
+                {% if routes.has_previous %}
+                <a href="?{% if query %}q={{ query }}&{% endif %}{% if current_category %}category={{ current_category }}&{% endif %}sort={{ current_sort }}&page={{ routes.previous_page_number }}" class="page-btn">←</a>
+                {% endif %}
+                {% for i in routes.paginator.page_range %}
+                    {% if i == routes.number %}
+                    <span class="page-btn active">{{ i }}</span>
+                    {% elif i >= routes.number|add:"-2" and i <= routes.number|add:"2" %}
+                    <a href="?{% if query %}q={{ query }}&{% endif %}sort={{ current_sort }}&page={{ i }}" class="page-btn">{{ i }}</a>
+                    {% elif forloop.first or forloop.last %}
+                    <a href="?sort={{ current_sort }}&page={{ i }}" class="page-btn">{{ i }}</a>
+                    {% elif i == routes.number|add:"-3" or i == routes.number|add:"3" %}
+                    <span class="page-btn dots">…</span>
+                    {% endif %}
+                {% endfor %}
+                {% if routes.has_next %}
+                <a href="?{% if query %}q={{ query }}&{% endif %}sort={{ current_sort }}&page={{ routes.next_page_number }}" class="page-btn">→</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                <div style="font-size: 4rem; margin-bottom: 16px;">🔍</div>
+                <h2 style="font-family: var(--font-display); margin-bottom: 8px;">Маршруты не найдены</h2>
+                <p style="margin-bottom: 24px;">Попробуйте изменить параметры поиска</p>
+                <a href="{% url 'routes:list' %}" class="btn btn-primary">Показать все маршруты</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mapEl = document.getElementById('listMap');
+    if (!mapEl) return;
+    const map = KGDMap.initMap('listMap', { zoom: 10 });
+    fetch('/api/routes/geojson/')
+        .then(r => r.json())
+        .then(geojson => {
+            const routes = geojson.features.map(f => ({
+                ...f.properties,
+                start_lat: f.geometry.coordinates[1],
+                start_lng: f.geometry.coordinates[0],
+            }));
+            KGDMap.addRoutesToMap(map, routes);
+        }).catch(() => {});
+});
+</script>
+{% endblock %}

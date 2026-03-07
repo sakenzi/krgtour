@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Панель управления — КарагандаТур{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-layout { display: flex; min-height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+.dashboard-sidebar { width: 240px; background: #0F0A2E; padding: 20px 12px; flex-shrink: 0; position: sticky; top: var(--nav-height); height: calc(100vh - var(--nav-height)); overflow-y: auto; }
+.dashboard-main { flex: 1; padding: 32px; background: var(--bg-secondary); overflow-x: auto; }
+.dash-nav-logo { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="dash-nav-logo">⚙️ Управление</div>
+
+        <div class="dash-nav-section">Контент</div>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'route_list' %}active{% endif %}">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item">➕ Новый маршрут</a>
+
+        <div class="dash-nav-section">Бизнес</div>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'bookings' %}active{% endif %}">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'reviews' %}active{% endif %}">💬 Отзывы</a>
+
+        <div class="dash-nav-section">Система</div>
+        <a href="{% url 'django-admin:index' %}" class="dash-nav-item">⚙️ Django Admin</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+    </aside>
+
+    <!-- Main -->
+    <main class="dashboard-main">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h1 style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;">Панель управления</h1>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Добро пожаловать, {{ request.user.get_full_name|default:request.user.username }}</p>
+            </div>
+            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary">➕ Новый маршрут</a>
+        </div>
+
+        <!-- Stats -->
+        <div class="dash-stat-grid">
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background: var(--purple-100);">🏔</div>
+                <div>
+                    <div class="dash-stat-value">{{ stats.total_routes }}</div>
+                    <div class="dash-stat-label">Активных маршрутов</div>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background: #ECFDF5;">📅</div>
+                <div>
+                    <div class="dash-stat-value">{{ stats.total_bookings }}</div>
+                    <div class="dash-stat-label">Всего бронирований</div>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background: #FFFBEB;">⏳</div>
+                <div>
+                    <div class="dash-stat-value" style="color: var(--warning);">{{ stats.pending_bookings }}</div>
+                    <div class="dash-stat-label">Ожидают подтверждения</div>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background: #F0FDF4;">💰</div>
+                <div>
+                    <div class="dash-stat-value">{{ stats.revenue|intcomma }} ₸</div>
+                    <div class="dash-stat-label">Общий доход</div>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background: #EFF6FF;">👤</div>
+                <div>
+                    <div class="dash-stat-value">{{ stats.total_users }}</div>
+                    <div class="dash-stat-label">Пользователей</div>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background: var(--purple-50);">📍</div>
+                <div>
+                    <div class="dash-stat-value">{{ stats.total_places }}</div>
+                    <div class="dash-stat-label">Активных мест</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two-column layout -->
+        <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; flex-wrap: wrap;">
+
+            <!-- Recent Bookings -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
+                <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="font-family: var(--font-display); font-size: 1rem; font-weight: 700;">Последние бронирования</h2>
+                    <a href="{% url 'dashboard:bookings' %}" style="font-size: 0.82rem; color: var(--primary);">Все →</a>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-secondary);">
+                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Код</th>
+                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Маршрут</th>
+                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Дата</th>
+                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Статус</th>
+                                <th style="padding: 10px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Сумма</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_bookings %}
+                            <tr style="border-top: 1px solid var(--border);">
+                                <td style="padding: 12px 16px; font-size: 0.82rem; font-weight: 700; color: var(--primary);">#{{ booking.confirmation_code }}</td>
+                                <td style="padding: 12px 16px; font-size: 0.875rem;">{{ booking.route.title|truncatechars:28 }}</td>
+                                <td style="padding: 12px 16px; font-size: 0.82rem; color: var(--text-muted);">{{ booking.tour_date|date:"d.m.Y" }}</td>
+                                <td style="padding: 12px 16px;">
+                                    <span style="
+                                        padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+                                        {% if booking.status == 'confirmed' %}background: #ECFDF5; color: var(--success);
+                                        {% elif booking.status == 'pending' %}background: #FFFBEB; color: var(--warning);
+                                        {% elif booking.status == 'cancelled' %}background: #FEF2F2; color: var(--error);
+                                        {% else %}background: var(--bg-tertiary); color: var(--text-muted);{% endif %}
+                                    ">{{ booking.get_status_display }}</span>
+                                </td>
+                                <td style="padding: 12px 16px; font-size: 0.875rem; font-weight: 600; text-align: right;">{{ booking.total_price|intcomma }} ₸</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" style="padding: 32px; text-align: center; color: var(--text-muted);">Нет бронирований</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Routes & Pending Reviews -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- Top Routes -->
+                <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
+                        <h2 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;">🔥 Топ маршруты</h2>
+                    </div>
+                    <div style="padding: 8px 12px;">
+                        {% for route in top_routes %}
+                        <a href="{{ route.get_absolute_url }}" style="display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: var(--radius-sm); transition: background var(--transition);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+                            <span style="width: 24px; height: 24px; background: var(--purple-100); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: var(--primary); flex-shrink: 0;">{{ forloop.counter }}</span>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ route.title }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ route.booking_count }} бронирований</div>
+                            </div>
+                            <span style="font-size: 0.78rem; color: var(--accent);">⭐ {{ route.avg_rating }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Pending Reviews -->
+                {% if pending_reviews %}
+                <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
+                        <h2 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;">⚠️ Ожидают модерации</h2>
+                        <a href="{% url 'dashboard:reviews' %}" style="font-size: 0.78rem; color: var(--primary);">Все →</a>
+                    </div>
+                    <div style="padding: 8px 12px;">
+                        {% for review in pending_reviews|slice:":3" %}
+                        <div style="padding: 10px 8px; border-bottom: 1px solid var(--border);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 0.82rem; font-weight: 600;">{{ review.user.username }}</span>
+                                <span style="color: var(--accent); font-size: 0.82rem;">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% endif %}{% endfor %}</span>
+                            </div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">{{ review.comment|truncatechars:80 }}</p>
+                            <div style="display: flex; gap: 6px;">
+                                <button onclick="moderateReview({{ review.id }}, 'approve')" class="btn btn-sm" style="background: #ECFDF5; color: var(--success); padding: 4px 10px;">✅ Одобрить</button>
+                                <button onclick="moderateReview({{ review.id }}, 'reject')" class="btn btn-sm" style="background: #FEF2F2; color: var(--error); padding: 4px 10px;">❌ Отклонить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function moderateReview(id, action) {
+    try {
+        const resp = await fetch(`/dashboard/reviews/${id}/moderate/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            body: JSON.stringify({ action })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showToast(action === 'approve' ? 'Отзыв одобрен' : 'Отзыв отклонён', 'success');
+            setTimeout(() => location.reload(), 800);
+        }
+    } catch (e) { showToast('Ошибка', 'error'); }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ place.name }} — КарагандаТур{% endblock %}
+
+{% block extra_css %}
+<style>
+#placeMap { height: 320px; border-radius: var(--radius-xl); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-top: var(--nav-height);">
+    <!-- Hero -->
+    <div style="height: 320px; position: relative; overflow: hidden;">
+        {% if place.cover_image %}
+        <img src="{{ place.cover_image.url }}" alt="{{ place.name }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}
+        <div style="background: linear-gradient(135deg, #1E0B4B, #4C1D95); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:5rem;">{{ place.category.icon|default:"📍" }}</div>
+        {% endif %}
+        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%); display:flex; align-items:flex-end; padding:32px 40px;">
+            <div style="color:white;">
+                <div class="breadcrumbs" style="color:rgba(255,255,255,0.7); margin-bottom:10px;">
+                    <a href="/" style="color:rgba(255,255,255,0.7);">Главная</a>
+                    <span class="breadcrumb-sep">/</span>
+                    <a href="{% url 'places:list' %}" style="color:rgba(255,255,255,0.7);">Места</a>
+                    <span class="breadcrumb-sep">/</span>
+                    <span style="color:white;">{{ place.name }}</span>
+                </div>
+                <h1 style="font-family:var(--font-display); font-size:2.2rem; font-weight:800; margin-bottom:8px;">{{ place.name }}</h1>
+                <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                    {% if place.category %}<span style="background:{{ place.category.color }}; color:white; padding:4px 12px; border-radius:999px; font-size:0.8rem; font-weight:600;">{{ place.category.icon }} {{ place.category.name }}</span>{% endif %}
+                    {% if place.avg_rating > 0 %}<span style="color:var(--accent); font-weight:600;">⭐ {{ place.avg_rating }} ({{ place.review_count }})</span>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="max-width:1100px; margin:0 auto; padding:40px 24px; display:grid; grid-template-columns:1fr 340px; gap:40px; align-items:start;">
+        <!-- Main -->
+        <div>
+            <section style="margin-bottom:36px;">
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">О месте</h2>
+                <div style="line-height:1.8; color:var(--text-secondary);">{{ place.description|linebreaks }}</div>
+            </section>
+
+            <!-- Map -->
+            <section style="margin-bottom:36px;">
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">🗺 На карте</h2>
+                <div class="map-container"><div id="placeMap"></div></div>
+            </section>
+
+            <!-- Gallery -->
+            {% if place.gallery.all %}
+            <section style="margin-bottom:36px;">
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">📷 Галерея</h2>
+                <div class="gallery-grid">
+                    {% for img in place.gallery.all %}
+                    <div class="gallery-item" data-src="{{ img.image.url }}">
+                        <img src="{{ img.image.url }}" alt="{{ img.caption }}" loading="lazy">
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Nearby Routes -->
+            {% if nearby_routes %}
+            <section style="margin-bottom:36px;">
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">🏔 Маршруты поблизости</h2>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for route in nearby_routes %}
+                    <a href="{{ route.get_absolute_url }}" style="display:flex; gap:14px; padding:14px; background:var(--bg-secondary); border-radius:var(--radius-md); border:1px solid var(--border); transition:all var(--transition);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                        <div style="font-size:1.5rem;">🏔</div>
+                        <div>
+                            <div style="font-weight:600; font-size:0.875rem;">{{ route.title }}</div>
+                            <div style="font-size:0.78rem; color:var(--text-muted);">📏 {{ route.distance_km }} км · ⏱ {{ route.duration_hours }} ч</div>
+                        </div>
+                        <span style="margin-left:auto; color:var(--primary);">→</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Reviews -->
+            <section>
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:18px;">💬 Отзывы</h2>
+                {% if review_form %}
+                <div style="background:var(--bg-secondary); padding:20px; border-radius:var(--radius-lg); margin-bottom:20px; border:1px solid var(--border);">
+                    <h3 style="font-weight:700; margin-bottom:14px; font-size:0.95rem;">Оставить отзыв</h3>
+                    <form id="placeReviewForm" action="{% url 'places:add_review' place.slug %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <div class="star-rating">{% for i in "54321" %}<input type="radio" name="rating" value="{{ i }}" id="pstar{{ i }}" required><label for="pstar{{ i }}">★</label>{% endfor %}</div>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="comment" class="form-textarea" rows="3" placeholder="Ваш отзыв..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+                    </form>
+                </div>
+                {% endif %}
+                <div>
+                    {% for review in reviews %}
+                    <div class="review-card">
+                        <div class="review-header">
+                            <img src="{{ review.user.avatar_url }}" alt="{{ review.user.username }}" class="review-avatar">
+                            <div class="review-meta">
+                                <div class="review-user">{{ review.user.get_full_name|default:review.user.username }}</div>
+                                <div class="review-date">{{ review.created_at|date:"d.m.Y" }}</div>
+                            </div>
+                            <div class="review-stars">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+                        </div>
+                        <p class="review-text">{{ review.comment }}</p>
+                    </div>
+                    {% empty %}
+                    <div style="text-align:center; padding:32px; color:var(--text-muted);">
+                        <p>Отзывов пока нет</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div>
+            <div class="route-info-card">
+                {% if place.entry_price %}
+                <div class="info-price">{{ place.entry_price|intcomma }} ₸</div>
+                <div class="info-price-label">входной билет</div>
+                {% else %}
+                <div class="info-price" style="color:var(--success);">Бесплатно</div>
+                <div class="info-price-label">свободный вход</div>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                <button class="btn btn-ghost {% if is_favorite %}active{% endif %}" style="width:100%; justify-content:center; margin-bottom:16px;" data-favorite-url="{% url 'places:toggle_favorite' place.slug %}">
+                    <span class="fav-icon">{% if is_favorite %}❤️{% else %}🤍{% endif %}</span>
+                    {% if is_favorite %}В избранном{% else %}В избранное{% endif %}
+                </button>
+                {% endif %}
+
+                <div style="display:flex; flex-direction:column; gap:10px; font-size:0.875rem;">
+                    {% if place.address %}
+                    <div style="display:flex; gap:10px;">
+                        <span>📍</span>
+                        <span style="color:var(--text-secondary);">{{ place.address }}</span>
+                    </div>
+                    {% endif %}
+                    {% if place.working_hours %}
+                    <div style="display:flex; gap:10px;">
+                        <span>🕐</span>
+                        <span style="color:var(--text-secondary);">{{ place.working_hours }}</span>
+                    </div>
+                    {% endif %}
+                    {% if place.phone %}
+                    <div style="display:flex; gap:10px;">
+                        <span>📞</span>
+                        <a href="tel:{{ place.phone }}" style="color:var(--primary);">{{ place.phone }}</a>
+                    </div>
+                    {% endif %}
+                    {% if place.website %}
+                    <div style="display:flex; gap:10px;">
+                        <span>🌐</span>
+                        <a href="{{ place.website }}" target="_blank" style="color:var(--primary); word-break:break-all;">Сайт</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const map = KGDMap.initMap('placeMap', {
+        center: [{{ place.lat }}, {{ place.lng }}],
+        zoom: 14
+    });
+    L.marker([{{ place.lat }}, {{ place.lng }}]).addTo(map)
+        .bindPopup('<div class="map-popup"><div class="map-popup-title">{{ place.name }}</div></div>');
+});
+</script>
+{% endblock %}

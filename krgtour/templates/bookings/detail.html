@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Бронирование #{{ booking.confirmation_code }} — КарагандаТур{% endblock %}
+
+{% block content %}
+<div style="margin-top: var(--nav-height); padding: 40px 24px; background: var(--bg-secondary); min-height: calc(100vh - var(--nav-height));">
+    <div class="container" style="max-width: 700px;">
+
+        <div class="breadcrumbs" style="margin-bottom: 24px;">
+            <a href="/">Главная</a>
+            <span class="breadcrumb-sep">/</span>
+            <a href="{% url 'users:bookings_history' %}">Бронирования</a>
+            <span class="breadcrumb-sep">/</span>
+            <span>#{{ booking.confirmation_code }}</span>
+        </div>
+
+        <!-- Status Banner -->
+        <div style="padding: 20px 24px; border-radius: var(--radius-lg); margin-bottom: 24px; display: flex; align-items: center; gap: 14px;
+            {% if booking.status == 'confirmed' %}background: #ECFDF5; border: 1px solid #A7F3D0;
+            {% elif booking.status == 'pending' %}background: #FFFBEB; border: 1px solid #FDE68A;
+            {% elif booking.status == 'completed' %}background: #EFF6FF; border: 1px solid #BFDBFE;
+            {% elif booking.status == 'cancelled' %}background: #FEF2F2; border: 1px solid #FECACA;
+            {% else %}background: var(--bg-secondary); border: 1px solid var(--border);{% endif %}">
+            <span style="font-size: 1.8rem;">
+                {% if booking.status == 'confirmed' %}✅
+                {% elif booking.status == 'pending' %}⏳
+                {% elif booking.status == 'completed' %}🏆
+                {% elif booking.status == 'cancelled' %}❌
+                {% else %}📋{% endif %}
+            </span>
+            <div>
+                <div style="font-weight: 700; font-size: 1rem;">{{ booking.get_status_display }}</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">Код бронирования: <strong>#{{ booking.confirmation_code }}</strong></div>
+            </div>
+        </div>
+
+        <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-sm);">
+            <!-- Route info -->
+            <div style="padding: 24px; border-bottom: 1px solid var(--border); display: flex; gap: 16px;">
+                {% if booking.route.cover_image %}
+                <img src="{{ booking.route.cover_image.url }}" style="width: 100px; height: 80px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0;">
+                {% else %}
+                <div style="width: 100px; height: 80px; background: linear-gradient(135deg, var(--purple-800), var(--purple-600)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">🏔</div>
+                {% endif %}
+                <div>
+                    <h2 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">{{ booking.route.title }}</h2>
+                    <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-muted);">
+                        <span>📏 {{ booking.route.distance_km }} км</span>
+                        <span>⏱ {{ booking.route.duration_hours }} ч</span>
+                        <span class="card-badge badge-{{ booking.route.difficulty }}" style="position:static;">{{ booking.route.difficulty_label }}</span>
+                    </div>
+                    <a href="{{ booking.route.get_absolute_url }}" style="font-size: 0.82rem; color: var(--primary); margin-top: 6px; display: inline-block;">Открыть маршрут →</a>
+                </div>
+            </div>
+
+            <!-- Booking details -->
+            <div style="padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Дата тура</div>
+                    <div style="font-weight: 600;">{{ booking.tour_date|date:"d.m.Y, l" }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Количество человек</div>
+                    <div style="font-weight: 600;">{{ booking.num_people }} чел.</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Контактное лицо</div>
+                    <div style="font-weight: 600;">{{ booking.contact_name }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Телефон</div>
+                    <div style="font-weight: 600;">{{ booking.contact_phone }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Email</div>
+                    <div style="font-weight: 600;">{{ booking.contact_email }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Дата создания</div>
+                    <div style="font-weight: 600;">{{ booking.created_at|date:"d.m.Y H:i" }}</div>
+                </div>
+            </div>
+
+            {% if booking.special_requests %}
+            <div style="padding: 16px 24px; background: var(--bg-secondary); border-top: 1px solid var(--border);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Особые пожелания</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary);">{{ booking.special_requests }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Total -->
+            <div style="padding: 20px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary);">Итого к оплате</div>
+                <div style="font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--primary);">{{ booking.total_price|intcomma }} ₸</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end;">
+            <a href="{% url 'users:bookings_history' %}" class="btn btn-ghost">← Все бронирования</a>
+            {% if booking.can_cancel %}
+            <form method="post" action="{% url 'bookings:cancel' booking.id %}" onsubmit="return confirm('Отменить бронирование?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">❌ Отменить</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

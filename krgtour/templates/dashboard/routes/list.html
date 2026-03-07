@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Маршруты — Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-layout { display: flex; min-height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+.dashboard-sidebar { width: 240px; background: #0F0A2E; padding: 20px 12px; flex-shrink: 0; }
+.dashboard-main { flex: 1; padding: 32px; background: var(--bg-secondary); overflow-x: auto; }
+.dash-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); color: rgba(255,255,255,0.6); font-size: 0.875rem; font-weight: 500; margin-bottom: 4px; transition: all var(--transition); }
+.dash-nav-item:hover, .dash-nav-item.active { background: rgba(255,255,255,0.08); color: white; }
+.dash-nav-item.active { background: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;">⚙️ Управление</div>
+        <a href="{% url 'dashboard:home' %}" class="dash-nav-item">📊 Обзор</a>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item active">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item">➕ Новый маршрут</a>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item">💬 Отзывы</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+    </aside>
+
+    <main class="dashboard-main">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">Все маршруты ({{ routes.count }})</h1>
+            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary">➕ Новый маршрут</a>
+        </div>
+
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--bg-secondary);">
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Маршрут</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Категория</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Сложность</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Рейтинг</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Брон.</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Статус</th>
+                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in routes %}
+                    <tr style="border-top: 1px solid var(--border);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+                        <td style="padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                {% if route.cover_image %}
+                                <img src="{{ route.cover_image.url }}" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0;">
+                                {% else %}
+                                <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--purple-800), var(--purple-600)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">🏔</div>
+                                {% endif %}
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.875rem;">{{ route.title }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ route.distance_km }} км · {{ route.duration_hours }} ч</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 14px 16px; font-size: 0.82rem; color: var(--text-secondary);">
+                            {{ route.category.name|default:"—" }}
+                        </td>
+                        <td style="padding: 14px 16px; text-align: center;">
+                            <span class="card-badge badge-{{ route.difficulty }}" style="position: static;">{{ route.difficulty_label }}</span>
+                        </td>
+                        <td style="padding: 14px 16px; text-align: center; font-size: 0.875rem;">
+                            {% if route.avg_rating > 0 %}
+                            <span style="color: var(--accent);">⭐ {{ route.avg_rating }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td style="padding: 14px 16px; text-align: center; font-size: 0.875rem; font-weight: 600;">
+                            {{ route.booking_count }}
+                        </td>
+                        <td style="padding: 14px 16px; text-align: center;">
+                            <span style="padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+                                {% if route.status == 'active' %}background: #ECFDF5; color: var(--success);
+                                {% elif route.status == 'draft' %}background: #FFFBEB; color: var(--warning);
+                                {% else %}background: var(--bg-tertiary); color: var(--text-muted);{% endif %}">
+                                {{ route.get_status_display }}
+                            </span>
+                        </td>
+                        <td style="padding: 14px 16px; text-align: right;">
+                            <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                                <a href="{{ route.get_absolute_url }}" target="_blank" class="btn btn-sm btn-ghost" title="Просмотр">👁</a>
+                                <a href="{% url 'dashboard:route_edit' route.slug %}" class="btn btn-sm btn-secondary">✏️ Редактировать</a>
+                                <form method="post" action="{% url 'dashboard:route_delete' route.slug %}" style="display:inline;" onsubmit="return confirm('Архивировать маршрут?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding: 60px; text-align: center; color: var(--text-muted);">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">🏔</div>
+                            <p>Маршрутов пока нет</p>
+                            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary btn-sm" style="margin-top: 12px;">Создать первый</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+{% endblock %}

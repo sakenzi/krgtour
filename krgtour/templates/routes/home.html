@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}КарагандаТур — Лучшие туристические маршруты{% endblock %}
+
+{% block extra_css %}
+<style>
+.home-map { height: 480px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<meta name="user-authenticated" content="{{ user.is_authenticated|yesno:'true,false' }}">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+    <div class="hero-container">
+        <div class="hero-content">
+            <div class="hero-tag">
+                <span>📍</span> Карагандинский регион, Казахстан
+            </div>
+            <h1 class="hero-title">
+                Открывай<br>
+                <span>красоту</span><br>
+                Казахстана
+            </h1>
+            <p class="hero-subtitle">
+                Маршруты, проверенные временем. Места, которые запоминаются навсегда.
+                Путешествуй по Карагандинскому региону с умом.
+            </p>
+
+            <div class="hero-search">
+                <span style="padding-left: 12px; font-size: 1.2rem;">🔍</span>
+                <input
+                    type="text"
+                    class="hero-search-input"
+                    placeholder="Найти маршрут, место, категорию..."
+                    id="heroSearch"
+                >
+                <a href="{% url 'routes:list' %}" class="btn btn-primary btn-lg">Все маршруты</a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-number">{{ featured_routes|length|add:"50" }}+</div>
+                    <div class="hero-stat-label">маршрутов</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">1000+</div>
+                    <div class="hero-stat-label">туристов</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">4.8★</div>
+                    <div class="hero-stat-label">рейтинг</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ CATEGORIES ============ -->
+<section class="section-sm" style="background: var(--bg-secondary);">
+    <div class="container">
+        <div class="categories-scroll">
+            <a href="{% url 'routes:list' %}" class="category-chip {% if not request.GET.category %}active{% endif %}">
+                🌐 Все маршруты
+            </a>
+            {% for cat in nav_categories %}
+            <a href="{% url 'routes:list' %}?category={{ cat.slug }}" class="category-chip">
+                {{ cat.name }} <span style="color: var(--text-muted); font-size: 0.8rem;">{{ cat.route_count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ============ FEATURED ROUTES ============ -->
+<section class="section">
+    <div class="container">
+        <div class="section-header-row section-header">
+            <div>
+                <h2 class="section-title">⭐ Лучшие маршруты</h2>
+                <p class="section-subtitle">Проверенные туристами направления Карагандинского региона</p>
+            </div>
+            <a href="{% url 'routes:list' %}" class="btn btn-ghost">Все маршруты →</a>
+        </div>
+
+        <div class="routes-grid">
+            {% for route in featured_routes %}
+            {% include "partials/route_card.html" with route=route %}
+            {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🗺</div>
+                <p>Маршруты скоро появятся</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ============ MAP PREVIEW ============ -->
+<section class="section" style="background: var(--bg-secondary);">
+    <div class="container">
+        <div class="section-header-row section-header">
+            <div>
+                <h2 class="section-title">🗺 Интерактивная карта</h2>
+                <p class="section-subtitle">Исследуй маршруты и места на карте</p>
+            </div>
+            <a href="{% url 'routes:map' %}" class="btn btn-ghost">Открыть полную карту →</a>
+        </div>
+
+        <div class="map-container home-map">
+            <div id="homeMap" style="height: 480px;"
+                 data-routes="{{ map_routes|default:'[]' }}"
+                 data-lat="{{ map_lat }}"
+                 data-lng="{{ map_lng }}"
+                 data-zoom="{{ map_zoom }}">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ POPULAR ROUTES ============ -->
+<section class="section">
+    <div class="container">
+        <div class="section-header-row section-header">
+            <div>
+                <h2 class="section-title">🔥 Популярные маршруты</h2>
+                <p class="section-subtitle">Самые бронируемые направления</p>
+            </div>
+        </div>
+
+        <div class="routes-grid">
+            {% for route in popular_routes|slice:":6" %}
+            {% include "partials/route_card.html" with route=route %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ============ AI ASSISTANT PROMO ============ -->
+<section class="section" style="background: linear-gradient(135deg, #0F0A2E, #2D1B69); color: white;">
+    <div class="container" style="text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 16px;">✨</div>
+        <h2 style="font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin-bottom: 12px;">
+            AI Ассистент для путешествий
+        </h2>
+        <p style="color: rgba(255,255,255,0.7); max-width: 500px; margin: 0 auto 32px;">
+            Задай вопрос нашему AI ассистенту — он поможет выбрать маршрут, составить план поездки
+            и ответит на любые вопросы о регионе
+        </p>
+        <a href="{% url 'ai_assistant:chat' %}" class="btn btn-primary btn-lg" style="background: white; color: var(--primary); font-size: 1rem;">
+            ✨ Попробовать AI Ассистента
+        </a>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const homeMapEl = document.getElementById('homeMap');
+    if (!homeMapEl) return;
+
+    const lat = parseFloat(homeMapEl.dataset.lat || '49.8047');
+    const lng = parseFloat(homeMapEl.dataset.lng || '73.1094');
+    const zoom = parseInt(homeMapEl.dataset.zoom || '11');
+
+    const map = KGDMap.initMap('homeMap', { center: [lat, lng], zoom });
+
+    // Load routes via AJAX
+    fetch('/api/routes/geojson/')
+        .then(r => r.json())
+        .then(geojson => {
+            const routes = geojson.features.map(f => ({
+                ...f.properties,
+                start_lat: f.geometry.coordinates[1],
+                start_lng: f.geometry.coordinates[0],
+            }));
+            KGDMap.addRoutesToMap(map, routes);
+        })
+        .catch(() => {});
+});
+</script>
+{% endblock %}

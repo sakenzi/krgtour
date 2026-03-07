@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Бронирования — Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-layout { display: flex; min-height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+.dashboard-sidebar { width: 240px; background: #0F0A2E; padding: 20px 12px; flex-shrink: 0; }
+.dashboard-main { flex: 1; padding: 32px; background: var(--bg-secondary); overflow-x: auto; }
+.dash-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); color: rgba(255,255,255,0.6); font-size: 0.875rem; font-weight: 500; margin-bottom: 4px; transition: all var(--transition); }
+.dash-nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+.dash-nav-item.active { background: var(--primary); color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;">⚙️ Управление</div>
+        <a href="{% url 'dashboard:home' %}" class="dash-nav-item">📊 Обзор</a>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item active">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item">💬 Отзывы</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+    </aside>
+
+    <main class="dashboard-main">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">Бронирования</h1>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {% for val, label in bookings.model.STATUS_CHOICES %}
+                <a href="?status={{ val }}" class="btn btn-sm {% if status_filter == val %}btn-primary{% else %}btn-ghost{% endif %}">{{ label }}</a>
+                {% endfor %}
+                <a href="{% url 'dashboard:bookings' %}" class="btn btn-sm {% if not status_filter %}btn-secondary{% else %}btn-ghost{% endif %}">Все</a>
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--bg-secondary);">
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Код</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Маршрут</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Клиент</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Дата тура</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Чел.</th>
+                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Сумма</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Статус</th>
+                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr style="border-top: 1px solid var(--border);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+                        <td style="padding: 14px 16px; font-weight: 700; color: var(--primary); font-size: 0.82rem;">#{{ booking.confirmation_code }}</td>
+                        <td style="padding: 14px 16px; font-size: 0.875rem; max-width: 200px;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ booking.route.title }}</div>
+                        </td>
+                        <td style="padding: 14px 16px; font-size: 0.82rem;">
+                            <div>{{ booking.contact_name }}</div>
+                            <div style="color: var(--text-muted); font-size: 0.75rem;">{{ booking.contact_phone }}</div>
+                        </td>
+                        <td style="padding: 14px 16px; text-align: center; font-size: 0.82rem; color: var(--text-secondary);">{{ booking.tour_date|date:"d.m.Y" }}</td>
+                        <td style="padding: 14px 16px; text-align: center; font-size: 0.875rem; font-weight: 600;">{{ booking.num_people }}</td>
+                        <td style="padding: 14px 16px; text-align: right; font-size: 0.875rem; font-weight: 700;">{{ booking.total_price|intcomma }} ₸</td>
+                        <td style="padding: 14px 16px; text-align: center;">
+                            <select onchange="updateStatus('{{ booking.id }}', this.value)" style="padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.78rem; background: white; cursor: pointer;">
+                                {% for val, label in booking.STATUS_CHOICES %}
+                                <option value="{{ val }}" {% if booking.status == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td style="padding: 14px 16px; text-align: right; font-size: 0.82rem;">
+                            {{ booking.created_at|date:"d.m.Y" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" style="padding: 60px; text-align: center; color: var(--text-muted);">Нет бронирований</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateStatus(bookingId, status) {
+    try {
+        const resp = await fetch(`/dashboard/bookings/${bookingId}/status/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            body: JSON.stringify({ status })
+        });
+        const data = await resp.json();
+        if (data.success) showToast('Статус обновлён', 'success');
+        else showToast('Ошибка обновления', 'error');
+    } catch (e) { showToast('Ошибка', 'error'); }
+}
+</script>
+{% endblock %}

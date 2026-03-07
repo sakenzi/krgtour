@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Туристические маршруты Карагандинского региона — откройте красоту Казахстана{% endblock %}">
+    <title>{% block title %}КарагандаТур{% endblock %} — Туристические маршруты</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🏔</span>
+                <span class="logo-text">КарагандаТур</span>
+            </a>
+
+            <div class="nav-links" id="navLinks">
+                <a href="{% url 'routes:list' %}" class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.app_name == 'routes' %}active{% endif %}">
+                    Маршруты
+                </a>
+                <a href="{% url 'places:list' %}" class="nav-link {% if request.resolver_match.app_name == 'places' %}active{% endif %}">
+                    Места
+                </a>
+                <a href="{% url 'routes:map' %}" class="nav-link {% if request.resolver_match.url_name == 'map' %}active{% endif %}">
+                    🗺 Карта
+                </a>
+                <a href="{% url 'ai_assistant:chat' %}" class="nav-link ai-link {% if request.resolver_match.app_name == 'ai_assistant' %}active{% endif %}">
+                    ✨ AI Ассистент
+                </a>
+            </div>
+
+            <div class="nav-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'users:notifications' %}" class="nav-icon-btn" id="notifBtn" title="Уведомления">
+                        🔔
+                        <span class="notif-badge" id="notifCount" style="display:none">0</span>
+                    </a>
+                    <a href="{% url 'users:favorites' %}" class="nav-icon-btn" title="Избранное">❤️</a>
+                    <div class="nav-user-menu">
+                        <button class="nav-avatar-btn" id="userMenuBtn">
+                            <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="nav-avatar">
+                            <span class="nav-username">{{ user.first_name|default:user.username }}</span>
+                            <span class="dropdown-arrow">▾</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <a href="{% url 'users:profile' %}" class="dropdown-item">👤 Профиль</a>
+                            <a href="{% url 'users:bookings_history' %}" class="dropdown-item">📋 Мои бронирования</a>
+                            <a href="{% url 'users:favorites' %}" class="dropdown-item">❤️ Избранное</a>
+                            {% if user.is_staff %}
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'dashboard:home' %}" class="dropdown-item">⚙️ Панель управления</a>
+                            {% endif %}
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'users:logout' %}" class="dropdown-item logout-item">🚪 Выйти</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'users:login' %}" class="btn btn-ghost">Войти</a>
+                    <a href="{% url 'users:register' %}" class="btn btn-primary">Регистрация</a>
+                {% endif %}
+            </div>
+
+            <button class="nav-toggle" id="navToggle" aria-label="Меню">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container" id="messagesContainer">
+        {% for message in messages %}
+        <div class="message message-{{ message.tags }}" data-auto-dismiss>
+            <span class="message-icon">
+                {% if message.tags == 'success' %}✅
+                {% elif message.tags == 'error' %}❌
+                {% elif message.tags == 'warning' %}⚠️
+                {% else %}ℹ️{% endif %}
+            </span>
+            {{ message }}
+            <button class="message-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="main-content {% block main_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% block footer %}
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <span>🏔</span> КарагандаТур
+                </a>
+                <p class="footer-tagline">Открывай красоту Казахстана вместе с нами</p>
+                <div class="footer-social">
+                    <a href="#" class="social-link">📘 Facebook</a>
+                    <a href="#" class="social-link">📸 Instagram</a>
+                    <a href="#" class="social-link">💬 Telegram</a>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4 class="footer-heading">Маршруты</h4>
+                    {% for cat in nav_categories|slice:":5" %}
+                    <a href="{% url 'routes:list' %}?category={{ cat.slug }}" class="footer-link">{{ cat.name }}</a>
+                    {% endfor %}
+                </div>
+                <div class="footer-col">
+                    <h4 class="footer-heading">Сервисы</h4>
+                    <a href="{% url 'routes:map' %}" class="footer-link">Интерактивная карта</a>
+                    <a href="{% url 'places:list' %}" class="footer-link">Интересные места</a>
+                    <a href="{% url 'ai_assistant:chat' %}" class="footer-link">AI Ассистент</a>
+                </div>
+                <div class="footer-col">
+                    <h4 class="footer-heading">Компания</h4>
+                    <a href="#" class="footer-link">О нас</a>
+                    <a href="#" class="footer-link">Контакты</a>
+                    <a href="#" class="footer-link">Политика конфиденциальности</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 КарагандаТур. Туристические маршруты Казахстана.</p>
+        </div>
+    </footer>
+    {% endblock %}
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Main JS -->
+    <script src="/static/js/main.js"></script>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+    // Initialize notifications counter
+    {% if user.is_authenticated %}
+    (function() {
+        fetch('{% url "users:notifications_count" %}')
+            .then(r => r.json())
+            .then(data => {
+                if (data.count > 0) {
+                    const badge = document.getElementById('notifCount');
+                    if (badge) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline-flex';
+                    }
+                }
+            }).catch(() => {});
+    })();
+    {% endif %}
+    </script>
+</body>
+</html>
