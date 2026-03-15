@@ -149,9 +149,9 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 # Ollama AI
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
-OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", 60))
+OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_MODEL = "gpt-oss:120b-cloud"
+OLLAMA_TIMEOUT = 600
 
 # Map (Karaganda)
 MAP_DEFAULT_LAT = 49.8047
