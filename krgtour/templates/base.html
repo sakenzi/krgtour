@@ -5,16 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block meta_description %}Туристические маршруты Карагандинского региона — откройте красоту Казахстана{% endblock %}">
     <title>{% block title %}КарагандаТур{% endblock %} — Туристические маршруты</title>
-
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
-
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        /* ── Language Switcher ── */
+        .lang-switcher { position: relative; }
+
+        .lang-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            border: 1.5px solid var(--border);
+            background: white;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition);
+            height: 36px;
+        }
+
+        .lang-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            min-width: 160px;
+            padding: 6px;
+            display: none;
+            z-index: 200;
+            animation: dropdownFade 0.15s ease;
+        }
+
+        .lang-dropdown.show { display: block; }
+
+        .lang-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            background: none;
+            border: none;
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            text-align: left;
+            transition: background var(--transition);
+        }
+
+        .lang-option:hover { background: var(--bg-secondary); color: var(--primary); }
+
+        .lang-option.active {
+            background: var(--purple-50);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .lang-flag { font-size: 1rem; }
+        .lang-arrow { font-size: 0.6rem; color: var(--text-muted); margin-left: 2px; }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -28,16 +96,16 @@
             </a>
 
             <div class="nav-links" id="navLinks">
-                <a href="{% url 'routes:list' %}" class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.app_name == 'routes' %}active{% endif %}">
+                <a href="{% url 'routes:list' %}" class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.app_name == 'routes' %}active{% endif %}" data-t="nav_routes">
                     Маршруты
                 </a>
-                <a href="{% url 'places:list' %}" class="nav-link {% if request.resolver_match.app_name == 'places' %}active{% endif %}">
+                <a href="{% url 'places:list' %}" class="nav-link {% if request.resolver_match.app_name == 'places' %}active{% endif %}" data-t="nav_places">
                     Места
                 </a>
-                <a href="{% url 'routes:map' %}" class="nav-link {% if request.resolver_match.url_name == 'map' %}active{% endif %}">
+                <a href="{% url 'routes:map' %}" class="nav-link {% if request.resolver_match.url_name == 'map' %}active{% endif %}" data-t="nav_map">
                     🗺 Карта
                 </a>
-                <a href="{% url 'ai_assistant:chat' %}" class="nav-link ai-link {% if request.resolver_match.app_name == 'ai_assistant' %}active{% endif %}">
+                <a href="{% url 'ai_assistant:chat' %}" class="nav-link ai-link {% if request.resolver_match.app_name == 'ai_assistant' %}active{% endif %}" data-t="nav_ai">
                     ✨ AI Ассистент
                 </a>
             </div>
@@ -56,21 +124,41 @@
                             <span class="dropdown-arrow">▾</span>
                         </button>
                         <div class="user-dropdown" id="userDropdown">
-                            <a href="{% url 'users:profile' %}" class="dropdown-item">👤 Профиль</a>
-                            <a href="{% url 'users:bookings_history' %}" class="dropdown-item">📋 Мои бронирования</a>
-                            <a href="{% url 'users:favorites' %}" class="dropdown-item">❤️ Избранное</a>
+                            <a href="{% url 'users:profile' %}" class="dropdown-item"><span data-t="nav_profile">Профиль</span></a>
+                            <a href="{% url 'users:bookings_history' %}" class="dropdown-item"><span data-t="nav_bookings">Бронирования</span></a>
+                            <a href="{% url 'users:favorites' %}" class="dropdown-item"><span data-t="nav_favorites">Избранное</span></a>
                             {% if user.is_staff %}
                             <div class="dropdown-divider"></div>
-                            <a href="{% url 'dashboard:home' %}" class="dropdown-item">⚙️ Панель управления</a>
+                            <a href="{% url 'dashboard:home' %}" class="dropdown-item"><span data-t="nav_dashboard">Управление</span></a>
                             {% endif %}
                             <div class="dropdown-divider"></div>
-                            <a href="{% url 'users:logout' %}" class="dropdown-item logout-item">🚪 Выйти</a>
+                            <a href="{% url 'users:logout' %}" class="dropdown-item logout-item"><span data-t="nav_logout">Выйти</span></a>
                         </div>
                     </div>
                 {% else %}
-                    <a href="{% url 'users:login' %}" class="btn btn-ghost">Войти</a>
-                    <a href="{% url 'users:register' %}" class="btn btn-primary">Регистрация</a>
+                    <a href="{% url 'users:login' %}" class="btn btn-ghost" data-t="nav_login">Войти</a>
+                    <a href="{% url 'users:register' %}" class="btn btn-primary" data-t="nav_register">Регистрация</a>
                 {% endif %}
+
+                <!-- Language Switcher -->
+                <div class="lang-switcher">
+                    <button class="lang-btn" id="langBtn" title="Язык / Language / Тіл">
+                        <span id="langCurrentLabel">RU</span>
+                        <span class="lang-arrow">▾</span>
+                    </button>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <button class="lang-option" onclick="switchLang('ru')">
+                            <span class="lang-flag">🇷🇺</span> Русский
+                        </button>
+                        <button class="lang-option" onclick="switchLang('kk')">
+                            <span class="lang-flag">🇰🇿</span> Қазақша
+                        </button>
+                        <button class="lang-option" onclick="switchLang('en')">
+                            <span class="lang-flag">🇬🇧</span> English
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
             <button class="nav-toggle" id="navToggle" aria-label="Меню">
@@ -110,7 +198,7 @@
                 <a href="/" class="footer-logo">
                     <span>🏔</span> КарагандаТур
                 </a>
-                <p class="footer-tagline">Открывай красоту Казахстана вместе с нами</p>
+                <p class="footer-tagline" data-t="footer_tagline">Открывай красоту Казахстана вместе с нами</p>
                 <div class="footer-social">
                     <a href="#" class="social-link">📘 Facebook</a>
                     <a href="#" class="social-link">📸 Instagram</a>
@@ -120,41 +208,40 @@
 
             <div class="footer-links">
                 <div class="footer-col">
-                    <h4 class="footer-heading">Маршруты</h4>
+                    <h4 class="footer-heading" data-t="footer_routes">Маршруты</h4>
                     {% for cat in nav_categories|slice:":5" %}
                     <a href="{% url 'routes:list' %}?category={{ cat.slug }}" class="footer-link">{{ cat.name }}</a>
                     {% endfor %}
                 </div>
                 <div class="footer-col">
-                    <h4 class="footer-heading">Сервисы</h4>
-                    <a href="{% url 'routes:map' %}" class="footer-link">Интерактивная карта</a>
-                    <a href="{% url 'places:list' %}" class="footer-link">Интересные места</a>
-                    <a href="{% url 'ai_assistant:chat' %}" class="footer-link">AI Ассистент</a>
+                    <h4 class="footer-heading" data-t="footer_services">Сервисы</h4>
+                    <a href="{% url 'routes:map' %}" class="footer-link" data-t="footer_map">Интерактивная карта</a>
+                    <a href="{% url 'places:list' %}" class="footer-link" data-t="footer_places">Интересные места</a>
+                    <a href="{% url 'ai_assistant:chat' %}" class="footer-link" data-t="footer_ai">AI Ассистент</a>
                 </div>
                 <div class="footer-col">
-                    <h4 class="footer-heading">Компания</h4>
-                    <a href="#" class="footer-link">О нас</a>
-                    <a href="#" class="footer-link">Контакты</a>
-                    <a href="#" class="footer-link">Политика конфиденциальности</a>
+                    <h4 class="footer-heading" data-t="footer_company">Компания</h4>
+                    <a href="#" class="footer-link" data-t="footer_about">О нас</a>
+                    <a href="#" class="footer-link" data-t="footer_contacts">Контакты</a>
+                    <a href="#" class="footer-link" data-t="footer_privacy">Конфиденциальность</a>
                 </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>© 2025 КарагандаТур. Туристические маршруты Казахстана.</p>
+            <p>© 2025 КарагандаТур. <span data-t="footer_copy">Туристические маршруты Казахстана</span>.</p>
         </div>
     </footer>
     {% endblock %}
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    <!-- Translations (load first so T is available) -->
+    <script src="/static/js/translations.js"></script>
     <!-- Main JS -->
     <script src="/static/js/main.js"></script>
-
     {% block extra_js %}{% endblock %}
 
     <script>
-    // Initialize notifications counter
     {% if user.is_authenticated %}
     (function() {
         fetch('{% url "users:notifications_count" %}')
@@ -170,6 +257,17 @@
             }).catch(() => {});
     })();
     {% endif %}
+
+    // Highlight active lang option
+    (function() {
+        const lang = localStorage.getItem('kgd_lang') || 'ru';
+        document.querySelectorAll('.lang-option').forEach(btn => {
+            const langs = { 'ru': 0, 'kk': 1, 'en': 2 };
+            const idx = { 0: 'ru', 1: 'kk', 2: 'en' };
+            const btnIdx = Array.from(btn.parentElement.children).indexOf(btn);
+            if (idx[btnIdx] === lang) btn.classList.add('active');
+        });
+    })();
     </script>
 </body>
 </html>

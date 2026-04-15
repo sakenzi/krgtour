@@ -6,24 +6,23 @@
 {% block content %}
 <div style="margin-top: var(--nav-height); padding: 40px 24px; background: var(--bg-secondary); min-height: calc(100vh - var(--nav-height));">
     <div class="container" style="max-width: 1100px;">
-
         <div class="breadcrumbs" style="margin-bottom: 24px;">
-            <a href="/">Главная</a>
+            <a href="/" data-t="breadcrumb_home">Главная</a>
             <span class="breadcrumb-sep">/</span>
-            <a href="{% url 'users:profile' %}">Профиль</a>
+            <a href="{% url 'users:profile' %}" data-t="breadcrumb_profile">Профиль</a>
             <span class="breadcrumb-sep">/</span>
-            <span>Избранное</span>
+            <span data-t="breadcrumb_favorites">Избранное</span>
         </div>
 
-        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;">❤️ Избранное</h1>
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;" data-t="user_favorites_title">❤️ Избранное</h1>
 
         <!-- Tabs -->
         <div style="display: flex; gap: 8px; margin-bottom: 32px; border-bottom: 2px solid var(--border); padding-bottom: 0;">
             <button class="fav-tab active" data-tab="routes" style="padding: 10px 20px; border: none; background: none; font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid var(--primary); color: var(--primary); margin-bottom: -2px;">
-                🏔 Маршруты ({{ route_favorites|length }})
+                🏔 <span data-t="user_fav_routes">Маршруты</span> ({{ route_favorites|length }})
             </button>
             <button class="fav-tab" data-tab="places" style="padding: 10px 20px; border: none; background: none; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px;">
-                📍 Места ({{ place_favorites|length }})
+                📍 <span data-t="user_fav_places">Места</span> ({{ place_favorites|length }})
             </button>
         </div>
 
@@ -38,9 +37,9 @@
             {% else %}
             <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
                 <div style="font-size: 4rem; margin-bottom: 16px;">🏔</div>
-                <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;">Нет избранных маршрутов</h2>
-                <p style="margin-bottom: 24px;">Добавляйте маршруты в избранное, нажимая 🤍 на карточке</p>
-                <a href="{% url 'routes:list' %}" class="btn btn-primary">Найти маршруты</a>
+                <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;" data-t="user_no_fav_routes">Нет избранных маршрутов</h2>
+                <p style="margin-bottom: 24px;" data-t="user_fav_hint">Добавляйте маршруты в избранное, нажимая 🤍 на карточке</p>
+                <a href="{% url 'routes:list' %}" class="btn btn-primary" data-t="routes_show_all">Найти маршруты</a>
             </div>
             {% endif %}
         </div>
@@ -74,9 +73,8 @@
             {% else %}
             <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
                 <div style="font-size: 4rem; margin-bottom: 16px;">📍</div>
-                <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;">Нет избранных мест</h2>
-                <p style="margin-bottom: 24px;">Исследуйте интересные места и добавляйте в избранное</p>
-                <a href="{% url 'places:list' %}" class="btn btn-primary">Найти места</a>
+                <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;" data-t="user_no_fav_places">Нет избранных мест</h2>
+                <a href="{% url 'places:list' %}" class="btn btn-primary" data-t="places_show_all">Найти места</a>
             </div>
             {% endif %}
         </div>
@@ -98,7 +96,6 @@ document.querySelectorAll('.fav-tab').forEach(tab => {
         tab.style.color = 'var(--primary)';
         tab.style.fontWeight = '600';
         tab.classList.add('active');
-
         document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
         document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
     });

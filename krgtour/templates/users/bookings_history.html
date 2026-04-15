@@ -6,23 +6,21 @@
 {% block content %}
 <div style="margin-top: var(--nav-height); padding: 40px 24px; background: var(--bg-secondary); min-height: calc(100vh - var(--nav-height));">
     <div class="container" style="max-width: 900px;">
-
         <div class="breadcrumbs" style="margin-bottom: 24px;">
-            <a href="/">Главная</a>
+            <a href="/" data-t="breadcrumb_home">Главная</a>
             <span class="breadcrumb-sep">/</span>
-            <a href="{% url 'users:profile' %}">Профиль</a>
+            <a href="{% url 'users:profile' %}" data-t="breadcrumb_profile">Профиль</a>
             <span class="breadcrumb-sep">/</span>
-            <span>История бронирований</span>
+            <span data-t="breadcrumb_bookings">История бронирований</span>
         </div>
 
-        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;">📋 История бронирований</h1>
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;" data-t="user_history_title">📋 История бронирований</h1>
 
         {% if bookings %}
         <div style="display: flex; flex-direction: column; gap: 16px;">
             {% for booking in bookings %}
             <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-sm);">
                 <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
-
                     {% if booking.route.cover_image %}
                     <img src="{{ booking.route.cover_image.url }}" alt="{{ booking.route.title }}"
                          style="width: 100px; height: 80px; border-radius: var(--radius-md); object-fit: cover; flex-shrink: 0;">
@@ -37,7 +35,7 @@
                                     <a href="{{ booking.route.get_absolute_url }}" style="color: inherit;">{{ booking.route.title }}</a>
                                 </div>
                                 <div style="font-size: 0.8rem; color: var(--text-muted);">
-                                    Код: <strong style="color: var(--primary);">#{{ booking.confirmation_code }}</strong>
+                                    <span data-t="book_code">Код</span>: <strong style="color: var(--primary);">#{{ booking.confirmation_code }}</strong>
                                 </div>
                             </div>
                             <span style="padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; flex-shrink: 0;
@@ -65,7 +63,7 @@
                             {{ booking.created_at|date:"d.m.Y" }}
                         </div>
                         {% if booking.can_cancel %}
-                        <button onclick="cancelBooking('{{ booking.id }}')" class="btn btn-sm btn-danger">
+                        <button onclick="cancelBooking('{{ booking.id }}')" class="btn btn-sm btn-danger" data-t="book_cancel">
                             Отменить
                         </button>
                         {% endif %}
@@ -81,27 +79,22 @@
             {% endfor %}
         </div>
 
-        <!-- Pagination -->
         {% if bookings.has_other_pages %}
         <div class="pagination">
-            {% if bookings.has_previous %}
-            <a href="?page={{ bookings.previous_page_number }}" class="page-btn">←</a>
-            {% endif %}
+            {% if bookings.has_previous %}<a href="?page={{ bookings.previous_page_number }}" class="page-btn">←</a>{% endif %}
             {% for i in bookings.paginator.page_range %}
             <a href="?page={{ i }}" class="page-btn {% if bookings.number == i %}active{% endif %}">{{ i }}</a>
             {% endfor %}
-            {% if bookings.has_next %}
-            <a href="?page={{ bookings.next_page_number }}" class="page-btn">→</a>
-            {% endif %}
+            {% if bookings.has_next %}<a href="?page={{ bookings.next_page_number }}" class="page-btn">→</a>{% endif %}
         </div>
         {% endif %}
 
         {% else %}
         <div style="text-align: center; padding: 80px 20px; background: white; border-radius: var(--radius-xl); border: 1px solid var(--border);">
             <div style="font-size: 4rem; margin-bottom: 16px;">📅</div>
-            <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;">Нет бронирований</h2>
-            <p style="color: var(--text-muted); margin-bottom: 24px;">Забронируйте тур и начните своё путешествие по Казахстану</p>
-            <a href="{% url 'routes:list' %}" class="btn btn-primary">Найти маршруты</a>
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;" data-t="user_no_history">Нет бронирований</h2>
+            <p style="color: var(--text-muted); margin-bottom: 24px;" data-t="user_no_history_sub">Забронируйте тур и начните своё путешествие по Казахстану</p>
+            <a href="{% url 'routes:list' %}" class="btn btn-primary" data-t="user_find_routes2">Найти маршруты</a>
         </div>
         {% endif %}
     </div>
@@ -111,7 +104,8 @@
 {% block extra_js %}
 <script>
 async function cancelBooking(bookingId) {
-    if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
+    const tr = (typeof T !== 'undefined' && T[detectLang()]) ? T[detectLang()] : {};
+    if (!confirm(tr.cancel_confirm || 'Вы уверены, что хотите отменить бронирование?')) return;
     try {
         const resp = await fetch(`/bookings/${bookingId}/cancel/`, {
             method: 'POST',

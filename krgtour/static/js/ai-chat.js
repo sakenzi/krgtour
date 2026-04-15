@@ -9,18 +9,16 @@
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
-    const quickBtns = document.querySelectorAll('[data-quick-message]');
 
     if (!chatMessages || !chatInput || !sendBtn) return;
 
-    let history = []; // Conversation history for context
+    let history = [];
     let isLoading = false;
 
     const CSRF_TOKEN = document.cookie.split('; ')
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1] || '';
 
-    // Send message
     async function sendMessage(text) {
         if (isLoading || !text.trim()) return;
 
@@ -28,10 +26,8 @@
         chatInput.value = '';
         chatInput.style.height = 'auto';
 
-        // Add to history
         history.push({ role: 'user', content: text });
 
-        // Show typing indicator
         const typingId = showTyping();
         isLoading = true;
         sendBtn.disabled = true;
@@ -45,7 +41,7 @@
                 },
                 body: JSON.stringify({
                     message: text,
-                    history: history.slice(-10), // Last 10 messages
+                    history: history.slice(-10),
                 }),
             });
 
@@ -68,6 +64,9 @@
         }
     }
 
+    // Expose globally for quick buttons
+    window._sendAiMessage = sendMessage;
+
     function appendMessage(text, role, isError = false) {
         const isUser = role === 'user';
         const avatar = isUser
@@ -77,7 +76,6 @@
         const bubble = document.createElement('div');
         bubble.className = `chat-message ${isUser ? 'user' : 'ai'}`;
 
-        // Parse markdown-like formatting in AI responses
         const formattedText = isUser ? escapeHtml(text) : formatAIResponse(text);
 
         bubble.innerHTML = `
@@ -93,7 +91,6 @@
     }
 
     function formatAIResponse(text) {
-        // Convert markdown-like formatting
         return escapeHtml(text)
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -101,7 +98,6 @@
             .replace(/\n/g, '<br>')
             .replace(/^/, '<p>')
             .replace(/$/, '</p>')
-            // Convert URLs to links
             .replace(/\/routes\/([a-z0-9-]+)\//g, '<a href="/routes/$1/" style="color: var(--primary); font-weight: 600;">🏔 Открыть маршрут</a>');
     }
 
@@ -139,13 +135,11 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Auto-resize textarea
     chatInput.addEventListener('input', () => {
         chatInput.style.height = 'auto';
         chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
     });
 
-    // Send on Enter (not Shift+Enter)
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -155,25 +149,16 @@
 
     sendBtn.addEventListener('click', () => sendMessage(chatInput.value));
 
-    // Quick message buttons
-    quickBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            sendMessage(btn.dataset.quickMessage);
-        });
-    });
-
-    // Welcome message
+    // Welcome message using translation
     setTimeout(() => {
-        appendMessage(
-            'Привет! Я — AI ассистент КарагандаТур. 🏔\n\n' +
-            'Я помогу вам:\n' +
-            '• Выбрать маршрут по вашим предпочтениям\n' +
-            '• Составить план путешествия\n' +
-            '• Рассказать об интересных местах\n' +
-            '• Ответить на вопросы о регионе\n\n' +
-            'Спрашивайте!',
-            'ai'
-        );
+        const lang = (typeof detectLang === 'function') ? detectLang() : 'ru';
+        const tr = (typeof T !== 'undefined' && T[lang]) ? T[lang] : {};
+        const greeting = lang === 'en'
+            ? 'Hello! I\'m the KaragandaTour AI Assistant. 🏔\n\nI can help you:\n• Choose a route based on your preferences\n• Plan your trip\n• Tell you about interesting places\n• Answer questions about the region\n\nFeel free to ask!'
+            : lang === 'kk'
+            ? 'Сәлем! Мен — КарагандаТур AI Көмекшісімін. 🏔\n\nМен сізге:\n• Қалауыңызға қарай маршрут таңдауға\n• Саяхат жоспарын жасауға\n• Қызықты орындар туралы айтуға\n• Өңір туралы сұрақтарға жауап беруге көмектесемін\n\nСұраңыз!'
+            : 'Привет! Я — AI ассистент КарагандаТур. 🏔\n\nЯ помогу вам:\n• Выбрать маршрут по вашим предпочтениям\n• Составить план путешествия\n• Рассказать об интересных местах\n• Ответить на вопросы о регионе\n\nСпрашивайте!';
+        appendMessage(greeting, 'ai');
     }, 500);
 
 })();

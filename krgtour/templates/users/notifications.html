@@ -1,27 +1,21 @@
 {% extends "base.html" %}
 {% load humanize %}
-
 {% block title %}Уведомления — КарагандаТур{% endblock %}
-
 {% block content %}
 <div style="margin-top: var(--nav-height); padding: 40px 24px; background: var(--bg-secondary); min-height: calc(100vh - var(--nav-height));">
     <div class="container" style="max-width: 700px;">
-
         <div class="breadcrumbs" style="margin-bottom: 24px;">
-            <a href="/">Главная</a>
+            <a href="/" data-t="breadcrumb_home">Главная</a>
             <span class="breadcrumb-sep">/</span>
-            <a href="{% url 'users:profile' %}">Профиль</a>
+            <a href="{% url 'users:profile' %}" data-t="breadcrumb_profile">Профиль</a>
             <span class="breadcrumb-sep">/</span>
-            <span>Уведомления</span>
+            <span data-t="breadcrumb_notifications">Уведомления</span>
         </div>
-
-        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;">🔔 Уведомления</h1>
-
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 32px;" data-t="user_notif_title">🔔 Уведомления</h1>
         {% if notifications %}
         <div style="display: flex; flex-direction: column; gap: 8px;">
             {% for notif in notifications %}
             <div style="background: white; border: 1px solid {% if not notif.is_read %}var(--purple-200){% else %}var(--border){% endif %}; border-radius: var(--radius-lg); padding: 18px 20px; display: flex; gap: 14px; align-items: flex-start; {% if not notif.is_read %}background: var(--purple-50);{% endif %}">
-
                 <div style="font-size: 1.4rem; flex-shrink: 0; margin-top: 2px;">
                     {% if notif.type == 'booking_confirmed' %}✅
                     {% elif notif.type == 'booking_cancelled' %}❌
@@ -29,7 +23,6 @@
                     {% elif notif.type == 'new_route' %}🏔
                     {% else %}ℹ️{% endif %}
                 </div>
-
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
                         {{ notif.title }}
@@ -38,36 +31,28 @@
                         {% endif %}
                     </div>
                     <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.5;">{{ notif.message }}</p>
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ notif.created_at|timesince }} назад</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ notif.created_at|timesince }} <span data-t="notif_ago">назад</span></div>
                 </div>
-
                 {% if notif.link %}
                 <a href="{{ notif.link }}" class="btn btn-ghost btn-sm" style="flex-shrink: 0;">→</a>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
-
-        <!-- Pagination -->
         {% if notifications.has_other_pages %}
         <div class="pagination">
-            {% if notifications.has_previous %}
-            <a href="?page={{ notifications.previous_page_number }}" class="page-btn">←</a>
-            {% endif %}
+            {% if notifications.has_previous %}<a href="?page={{ notifications.previous_page_number }}" class="page-btn">←</a>{% endif %}
             {% for i in notifications.paginator.page_range %}
             <a href="?page={{ i }}" class="page-btn {% if notifications.number == i %}active{% endif %}">{{ i }}</a>
             {% endfor %}
-            {% if notifications.has_next %}
-            <a href="?page={{ notifications.next_page_number }}" class="page-btn">→</a>
-            {% endif %}
+            {% if notifications.has_next %}<a href="?page={{ notifications.next_page_number }}" class="page-btn">→</a>{% endif %}
         </div>
         {% endif %}
-
         {% else %}
         <div style="text-align: center; padding: 80px 20px; background: white; border-radius: var(--radius-xl); border: 1px solid var(--border);">
             <div style="font-size: 4rem; margin-bottom: 16px;">🔔</div>
-            <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;">Нет уведомлений</h2>
-            <p style="color: var(--text-muted);">Здесь будут появляться уведомления о бронированиях и других событиях</p>
+            <h2 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 8px;" data-t="user_no_notif">Нет уведомлений</h2>
+            <p style="color: var(--text-muted);" data-t="user_no_notif_sub">Здесь будут появляться уведомления о бронированиях и других событиях</p>
         </div>
         {% endif %}
     </div>

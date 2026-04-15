@@ -17,32 +17,32 @@
 {% block content %}
 <div class="dashboard-layout">
     <aside class="dashboard-sidebar">
-        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;">⚙️ Управление</div>
-        <a href="{% url 'dashboard:home' %}" class="dash-nav-item">📊 Обзор</a>
-        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item active">🏔 Маршруты</a>
-        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item">➕ Новый маршрут</a>
-        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item">📅 Бронирования</a>
-        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item">💬 Отзывы</a>
-        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;" data-t="dash_management">⚙️ Управление</div>
+        <a href="{% url 'dashboard:home' %}" class="dash-nav-item" data-t="dash_overview">📊 Обзор</a>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item active" data-t="dash_routes">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item" data-t="dash_new_route">➕ Новый маршрут</a>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item" data-t="dash_bookings">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item" data-t="dash_reviews">💬 Отзывы</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item" data-t="dash_site">🌐 На сайт</a>
     </aside>
 
     <main class="dashboard-main">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">Все маршруты ({{ routes.count }})</h1>
-            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary">➕ Новый маршрут</a>
+            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;"><span data-t="dash_all_routes">Все маршруты</span> ({{ routes.count }})</h1>
+            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary" data-t="dash_new_route_btn">➕ Новый маршрут</a>
         </div>
 
         <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: var(--bg-secondary);">
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Маршрут</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Категория</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Сложность</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Рейтинг</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Брон.</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Статус</th>
-                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Действия</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_route">Маршрут</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_category">Категория</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_difficulty">Сложность</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_rating">Рейтинг</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_bookings">Брон.</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_status">Статус</th>
+                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_actions">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,20 +61,14 @@
                                 </div>
                             </div>
                         </td>
-                        <td style="padding: 14px 16px; font-size: 0.82rem; color: var(--text-secondary);">
-                            {{ route.category.name|default:"—" }}
-                        </td>
+                        <td style="padding: 14px 16px; font-size: 0.82rem; color: var(--text-secondary);">{{ route.category.name|default:"—" }}</td>
                         <td style="padding: 14px 16px; text-align: center;">
                             <span class="card-badge badge-{{ route.difficulty }}" style="position: static;">{{ route.difficulty_label }}</span>
                         </td>
                         <td style="padding: 14px 16px; text-align: center; font-size: 0.875rem;">
-                            {% if route.avg_rating > 0 %}
-                            <span style="color: var(--accent);">⭐ {{ route.avg_rating }}</span>
-                            {% else %}—{% endif %}
+                            {% if route.avg_rating > 0 %}<span style="color: var(--accent);">⭐ {{ route.avg_rating }}</span>{% else %}—{% endif %}
                         </td>
-                        <td style="padding: 14px 16px; text-align: center; font-size: 0.875rem; font-weight: 600;">
-                            {{ route.booking_count }}
-                        </td>
+                        <td style="padding: 14px 16px; text-align: center; font-size: 0.875rem; font-weight: 600;">{{ route.booking_count }}</td>
                         <td style="padding: 14px 16px; text-align: center;">
                             <span style="padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
                                 {% if route.status == 'active' %}background: #ECFDF5; color: var(--success);
@@ -85,11 +79,11 @@
                         </td>
                         <td style="padding: 14px 16px; text-align: right;">
                             <div style="display: flex; justify-content: flex-end; gap: 6px;">
-                                <a href="{{ route.get_absolute_url }}" target="_blank" class="btn btn-sm btn-ghost" title="Просмотр">👁</a>
-                                <a href="{% url 'dashboard:route_edit' route.slug %}" class="btn btn-sm btn-secondary">✏️ Редактировать</a>
-                                <form method="post" action="{% url 'dashboard:route_delete' route.slug %}" style="display:inline;" onsubmit="return confirm('Архивировать маршрут?')">
+                                <a href="{{ route.get_absolute_url }}" target="_blank" class="btn btn-sm btn-ghost" data-t="dash_view">👁</a>
+                                <a href="{% url 'dashboard:route_edit' route.slug %}" class="btn btn-sm btn-secondary" data-t="dash_edit">✏️ Редактировать</a>
+                                <form method="post" action="{% url 'dashboard:route_delete' route.slug %}" style="display:inline;" onsubmit="return confirm(document.querySelector('[data-t=dash_archive_confirm]')?.textContent || 'Архивировать маршрут?')">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" data-t="dash_delete">🗑</button>
                                 </form>
                             </div>
                         </td>
@@ -98,14 +92,17 @@
                     <tr>
                         <td colspan="7" style="padding: 60px; text-align: center; color: var(--text-muted);">
                             <div style="font-size: 2.5rem; margin-bottom: 12px;">🏔</div>
-                            <p>Маршрутов пока нет</p>
-                            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary btn-sm" style="margin-top: 12px;">Создать первый</a>
+                            <p data-t="dash_no_routes">Маршрутов пока нет</p>
+                            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary btn-sm" style="margin-top: 12px;" data-t="dash_create_first">Создать первый</a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <!-- Hidden span for confirm text -->
+        <span data-t="dash_archive_confirm" style="display:none">Архивировать маршрут?</span>
     </main>
 </div>
 {% endblock %}

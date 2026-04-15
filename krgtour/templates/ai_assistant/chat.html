@@ -32,18 +32,18 @@
 <div class="ai-layout">
     <div class="ai-header">
         <div class="ai-header-icon">✨</div>
-        <h1>AI Ассистент для путешествий</h1>
-        <p>Задайте любой вопрос о маршрутах Карагандинского региона</p>
+        <h1 data-t="ai_title">AI Ассистент для путешествий</h1>
+        <p data-t="ai_subtitle">Задайте любой вопрос о маршрутах Карагандинского региона</p>
         <div style="margin-top: 12px;">
             {% if is_available %}
             <span class="status-indicator status-online">
                 <span class="status-dot"></span>
-                Модель {{ model }} — онлайн
+                {{ model }} — <span data-t="ai_online">онлайн</span>
             </span>
             {% else %}
             <span class="status-indicator status-offline">
                 <span class="status-dot"></span>
-                AI недоступен — запустите Ollama
+                <span data-t="ai_offline">AI недоступен — запустите Ollama</span>
             </span>
             {% endif %}
         </div>
@@ -56,14 +56,14 @@
 
         <!-- Quick Prompts -->
         <div class="quick-prompts">
-            <div class="quick-prompts-title">Быстрые вопросы</div>
+            <div class="quick-prompts-title" data-t="ai_quick_title">Быстрые вопросы</div>
             <div class="quick-prompts-list">
-                <button class="quick-prompt-btn" data-quick-message="Посоветуй лёгкий маршрут для начинающих">🌱 Маршрут для начинающих</button>
-                <button class="quick-prompt-btn" data-quick-message="Что интересного можно посмотреть в Карагандинском регионе?">📍 Интересные места</button>
-                <button class="quick-prompt-btn" data-quick-message="Составь план поездки на 2 дня в Каркаралинск">🗓 План на 2 дня</button>
-                <button class="quick-prompt-btn" data-quick-message="Какой маршрут лучше для семьи с детьми?">👨‍👩‍👧 Семейный маршрут</button>
-                <button class="quick-prompt-btn" data-quick-message="Расскажи о природных достопримечательностях Карагандинской области">🏔 Природные места</button>
-                <button class="quick-prompt-btn" data-quick-message="Какие маршруты подходят для велосипедистов?">🚴 Маршруты для велосипедистов</button>
+                <button class="quick-prompt-btn" data-quick-key="ai_q1_msg" data-t="ai_q1">🌱 Маршрут для начинающих</button>
+                <button class="quick-prompt-btn" data-quick-key="ai_q2_msg" data-t="ai_q2">📍 Интересные места</button>
+                <button class="quick-prompt-btn" data-quick-key="ai_q3_msg" data-t="ai_q3">🗓 План на 2 дня</button>
+                <button class="quick-prompt-btn" data-quick-key="ai_q4_msg" data-t="ai_q4">👨‍👩‍👧 Семейный маршрут</button>
+                <button class="quick-prompt-btn" data-quick-key="ai_q5_msg" data-t="ai_q5">🏔 Природные места</button>
+                <button class="quick-prompt-btn" data-quick-key="ai_q6_msg" data-t="ai_q6">🚴 Маршруты для велосипедистов</button>
             </div>
         </div>
 
@@ -72,17 +72,19 @@
             <textarea
                 id="chatInput"
                 class="chat-input"
-                placeholder="Спросите о маршрутах, местах, планировании поездки..."
                 rows="1"
-                {% if not is_available %}disabled placeholder="AI ассистент недоступен"{% endif %}
+                data-tp="{% if is_available %}ai_placeholder{% else %}ai_disabled_ph{% endif %}"
+                placeholder="Спросите о маршрутах, местах, планировании поездки..."
+                {% if not is_available %}disabled{% endif %}
             ></textarea>
-            <button id="sendBtn" class="chat-send-btn" title="Отправить" {% if not is_available %}disabled{% endif %}>
+            <button id="sendBtn" class="chat-send-btn" title="Отправить" {% if not is_available %}disabled{% endif %} data-t="ai_send">
                 ➤
             </button>
         </div>
 
         <div style="padding: 8px 24px 12px; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
-            AI может ошибаться. Проверяйте важную информацию. Работает на базе <strong>Ollama + {{ model }}</strong>.
+            <span data-t="ai_disclaimer">AI может ошибаться. Проверяйте важную информацию.</span>
+            Работает на базе <strong>Ollama + {{ model }}</strong>.
         </div>
     </div>
 </div>
@@ -90,4 +92,18 @@
 
 {% block extra_js %}
 <script src="/static/js/ai-chat.js"></script>
+<script>
+// Re-bind quick buttons after translations (they use data-quick-key for messages)
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-quick-key]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const lang = detectLang();
+            const tr = T[lang] || T.ru;
+            const key = this.dataset.quickKey;
+            const msg = tr[key] || this.textContent;
+            if (window._sendAiMessage) window._sendAiMessage(msg);
+        });
+    });
+});
+</script>
 {% endblock %}

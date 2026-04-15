@@ -21,9 +21,9 @@
         <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%); display:flex; align-items:flex-end; padding:32px 40px;">
             <div style="color:white;">
                 <div class="breadcrumbs" style="color:rgba(255,255,255,0.7); margin-bottom:10px;">
-                    <a href="/" style="color:rgba(255,255,255,0.7);">Главная</a>
+                    <a href="/" style="color:rgba(255,255,255,0.7);" data-t="breadcrumb_home">Главная</a>
                     <span class="breadcrumb-sep">/</span>
-                    <a href="{% url 'places:list' %}" style="color:rgba(255,255,255,0.7);">Места</a>
+                    <a href="{% url 'places:list' %}" style="color:rgba(255,255,255,0.7);" data-t="breadcrumb_places">Места</a>
                     <span class="breadcrumb-sep">/</span>
                     <span style="color:white;">{{ place.name }}</span>
                 </div>
@@ -40,20 +40,18 @@
         <!-- Main -->
         <div>
             <section style="margin-bottom:36px;">
-                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">О месте</h2>
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;" data-t="places_about">О месте</h2>
                 <div style="line-height:1.8; color:var(--text-secondary);">{{ place.description|linebreaks }}</div>
             </section>
 
-            <!-- Map -->
             <section style="margin-bottom:36px;">
-                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">🗺 На карте</h2>
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;" data-t="places_on_map">🗺 На карте</h2>
                 <div class="map-container"><div id="placeMap"></div></div>
             </section>
 
-            <!-- Gallery -->
             {% if place.gallery.all %}
             <section style="margin-bottom:36px;">
-                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">📷 Галерея</h2>
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;" data-t="places_gallery">📷 Галерея</h2>
                 <div class="gallery-grid">
                     {% for img in place.gallery.all %}
                     <div class="gallery-item" data-src="{{ img.image.url }}">
@@ -64,10 +62,9 @@
             </section>
             {% endif %}
 
-            <!-- Nearby Routes -->
             {% if nearby_routes %}
             <section style="margin-bottom:36px;">
-                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;">🏔 Маршруты поблизости</h2>
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:14px;" data-t="places_nearby">🏔 Маршруты поблизости</h2>
                 <div style="display:flex; flex-direction:column; gap:10px;">
                     {% for route in nearby_routes %}
                     <a href="{{ route.get_absolute_url }}" style="display:flex; gap:14px; padding:14px; background:var(--bg-secondary); border-radius:var(--radius-md); border:1px solid var(--border); transition:all var(--transition);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -83,21 +80,20 @@
             </section>
             {% endif %}
 
-            <!-- Reviews -->
             <section>
-                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:18px;">💬 Отзывы</h2>
+                <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:700; margin-bottom:18px;" data-t="places_reviews">💬 Отзывы</h2>
                 {% if review_form %}
                 <div style="background:var(--bg-secondary); padding:20px; border-radius:var(--radius-lg); margin-bottom:20px; border:1px solid var(--border);">
-                    <h3 style="font-weight:700; margin-bottom:14px; font-size:0.95rem;">Оставить отзыв</h3>
+                    <h3 style="font-weight:700; margin-bottom:14px; font-size:0.95rem;" data-t="places_write_review">Оставить отзыв</h3>
                     <form id="placeReviewForm" action="{% url 'places:add_review' place.slug %}" method="post">
                         {% csrf_token %}
                         <div class="form-group">
                             <div class="star-rating">{% for i in "54321" %}<input type="radio" name="rating" value="{{ i }}" id="pstar{{ i }}" required><label for="pstar{{ i }}">★</label>{% endfor %}</div>
                         </div>
                         <div class="form-group">
-                            <textarea name="comment" class="form-textarea" rows="3" placeholder="Ваш отзыв..." required></textarea>
+                            <textarea name="comment" class="form-textarea" rows="3" data-tp="detail_review_ph" placeholder="Ваш отзыв..." required></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+                        <button type="submit" class="btn btn-primary btn-sm" data-t="places_send_review">Отправить</button>
                     </form>
                 </div>
                 {% endif %}
@@ -116,7 +112,7 @@
                     </div>
                     {% empty %}
                     <div style="text-align:center; padding:32px; color:var(--text-muted);">
-                        <p>Отзывов пока нет</p>
+                        <p data-t="places_no_reviews">Отзывов пока нет</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -128,16 +124,16 @@
             <div class="route-info-card">
                 {% if place.entry_price %}
                 <div class="info-price">{{ place.entry_price|intcomma }} ₸</div>
-                <div class="info-price-label">входной билет</div>
+                <div class="info-price-label" data-t="places_entry">входной билет</div>
                 {% else %}
-                <div class="info-price" style="color:var(--success);">Бесплатно</div>
+                <div class="info-price" style="color:var(--success);" data-t="detail_free">Бесплатно</div>
                 <div class="info-price-label">свободный вход</div>
                 {% endif %}
 
                 {% if user.is_authenticated %}
                 <button class="btn btn-ghost {% if is_favorite %}active{% endif %}" style="width:100%; justify-content:center; margin-bottom:16px;" data-favorite-url="{% url 'places:toggle_favorite' place.slug %}">
                     <span class="fav-icon">{% if is_favorite %}❤️{% else %}🤍{% endif %}</span>
-                    {% if is_favorite %}В избранном{% else %}В избранное{% endif %}
+                    <span data-t="{% if is_favorite %}places_in_fav{% else %}places_add_fav{% endif %}">{% if is_favorite %}В избранном{% else %}В избранное{% endif %}</span>
                 </button>
                 {% endif %}
 
@@ -163,7 +159,7 @@
                     {% if place.website %}
                     <div style="display:flex; gap:10px;">
                         <span>🌐</span>
-                        <a href="{{ place.website }}" target="_blank" style="color:var(--primary); word-break:break-all;">Сайт</a>
+                        <a href="{{ place.website }}" target="_blank" style="color:var(--primary); word-break:break-all;" data-t="places_website">Сайт</a>
                     </div>
                     {% endif %}
                 </div>

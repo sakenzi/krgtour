@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Отзывы — Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+        <div class="dash-nav-logo">⚙️ Управление</div>
+        <div class="dash-nav-section">Контент</div>
+        <a href="{% url 'dashboard:home' %}" class="dash-nav-item">📊 Обзор</a>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item">➕ Новый маршрут</a>
+        <div class="dash-nav-section">Бизнес</div>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item active">💬 Отзывы</a>
+        <div class="dash-nav-section">Система</div>
+        <a href="{% url 'admin:index' %}" class="dash-nav-item">⚙️ Django Admin</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+    </aside>
+
+    <main class="dashboard-main">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+            <div>
+                <h1 style="font-family:var(--font-display); font-size:1.4rem; font-weight:800;">Отзывы</h1>
+                <p style="color:var(--text-muted); font-size:0.875rem; margin-top:4px;">
+                    Всего: {{ reviews.count }} —
+                    <span style="color:var(--warning);">⏳ Ожидают: {{ reviews|dictsort:"is_approved"|length }}</span>
+                </p>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <a href="?status=pending" class="btn btn-sm {% if request.GET.status == 'pending' %}btn-primary{% else %}btn-ghost{% endif %}">⏳ На модерации</a>
+                <a href="?status=approved" class="btn btn-sm {% if request.GET.status == 'approved' %}btn-primary{% else %}btn-ghost{% endif %}">✅ Одобренные</a>
+                <a href="{% url 'dashboard:reviews' %}" class="btn btn-sm {% if not request.GET.status %}btn-secondary{% else %}btn-ghost{% endif %}">Все</a>
+            </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;" id="reviewsList">
+            {% for review in reviews %}
+            <div class="review-dashboard-card" id="review-{{ review.id }}"
+                 style="background:white; border:1px solid {% if not review.is_approved %}var(--purple-200){% else %}var(--border){% endif %}; border-radius:var(--radius-lg); padding:20px; {% if not review.is_approved %}background:var(--purple-50);{% endif %}">
+
+                <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+                    <!-- User info -->
+                    <img src="{{ review.user.avatar_url }}" alt="{{ review.user.username }}"
+                         style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0;">
+
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+                            <span style="font-weight:700; font-size:0.9rem;">{{ review.user.get_full_name|default:review.user.username }}</span>
+                            <span style="color:var(--accent); font-size:0.9rem;">
+                                {% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                            </span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">{{ review.created_at|date:"d.m.Y H:i" }}</span>
+                            {% if not review.is_approved %}
+                            <span style="background:#FFFBEB; color:var(--warning); padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:700;">⏳ На модерации</span>
+                            {% else %}
+                            <span style="background:#ECFDF5; color:var(--success); padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:700;">✅ Опубликован</span>
+                            {% endif %}
+                        </div>
+
+                        <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin-bottom:10px;">{{ review.comment }}</p>
+
+                        <div style="font-size:0.78rem; color:var(--text-muted);">
+                            Маршрут: <a href="{{ review.route.get_absolute_url }}" style="color:var(--primary);">{{ review.route.title }}</a>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display:flex; gap:8px; flex-shrink:0;">
+                        {% if not review.is_approved %}
+                        <button onclick="moderateReview({{ review.id }}, 'approve')"
+                            class="btn btn-sm" style="background:#ECFDF5; color:var(--success); border:1px solid #A7F3D0;">
+                            ✅ Одобрить
+                        </button>
+                        {% endif %}
+                        <button onclick="moderateReview({{ review.id }}, 'reject')"
+                            class="btn btn-sm" style="background:#FEF2F2; color:var(--error); border:1px solid #FECACA;">
+                            🗑 Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:80px 20px; background:white; border-radius:var(--radius-xl); border:1px solid var(--border);">
+                <div style="font-size:3rem; margin-bottom:12px;">💬</div>
+                <p style="color:var(--text-muted);">Отзывов нет</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function moderateReview(id, action) {
+    try {
+        const resp = await fetch(`/dashboard/reviews/${id}/moderate/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            body: JSON.stringify({ action })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const card = document.getElementById('review-' + id);
+            if (action === 'reject') {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => card.remove(), 300);
+                showToast('Отзыв удалён', 'info');
+            } else {
+                card.style.background = 'white';
+                card.style.borderColor = 'var(--border)';
+                card.querySelector('[style*="FFFBEB"]')?.remove();
+                showToast('Отзыв одобрен и опубликован', 'success');
+                setTimeout(() => location.reload(), 800);
+            }
+        } else {
+            showToast('Ошибка', 'error');
+        }
+    } catch (e) {
+        showToast('Ошибка соединения', 'error');
+    }
+}
+</script>
+{% endblock %}

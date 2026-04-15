@@ -17,17 +17,17 @@
 {% block content %}
 <div class="dashboard-layout">
     <aside class="dashboard-sidebar">
-        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;">⚙️ Управление</div>
-        <a href="{% url 'dashboard:home' %}" class="dash-nav-item">📊 Обзор</a>
-        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item">🏔 Маршруты</a>
-        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item active">📅 Бронирования</a>
-        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item">💬 Отзывы</a>
-        <a href="{% url 'routes:home' %}" class="dash-nav-item">🌐 На сайт</a>
+        <div style="font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px;" data-t="dash_management">⚙️ Управление</div>
+        <a href="{% url 'dashboard:home' %}" class="dash-nav-item" data-t="dash_overview">📊 Обзор</a>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item" data-t="dash_routes">🏔 Маршруты</a>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item active" data-t="dash_bookings">📅 Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item" data-t="dash_reviews">💬 Отзывы</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item" data-t="dash_site">🌐 На сайт</a>
     </aside>
 
     <main class="dashboard-main">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">Бронирования</h1>
+            <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;" data-t="dash_bookings_title">Бронирования</h1>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 {% for val, label in bookings.model.STATUS_CHOICES %}
                 <a href="?status={{ val }}" class="btn btn-sm {% if status_filter == val %}btn-primary{% else %}btn-ghost{% endif %}">{{ label }}</a>
@@ -40,14 +40,14 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: var(--bg-secondary);">
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Код</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Маршрут</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Клиент</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Дата тура</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Чел.</th>
-                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Сумма</th>
-                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Статус</th>
-                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Действия</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_code">Код</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_route">Маршрут</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_client">Клиент</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_date">Дата тура</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_people">Чел.</th>
+                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_amount">Сумма</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_status">Статус</th>
+                        <th style="padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-t="dash_col_actions">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,7 +76,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="8" style="padding: 60px; text-align: center; color: var(--text-muted);">Нет бронирований</td></tr>
+                    <tr><td colspan="8" style="padding: 60px; text-align: center; color: var(--text-muted);" data-t="dash_no_bookings">Нет бронирований</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -95,8 +95,9 @@ async function updateStatus(bookingId, status) {
             body: JSON.stringify({ status })
         });
         const data = await resp.json();
-        if (data.success) showToast('Статус обновлён', 'success');
-        else showToast('Ошибка обновления', 'error');
+        const tr = (typeof T !== 'undefined' && T[detectLang()]) ? T[detectLang()] : {};
+        if (data.success) showToast(tr.dash_status_updated || 'Статус обновлён', 'success');
+        else showToast(tr.dash_status_error || 'Ошибка обновления', 'error');
     } catch (e) { showToast('Ошибка', 'error'); }
 }
 </script>

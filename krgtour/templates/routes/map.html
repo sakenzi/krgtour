@@ -44,34 +44,33 @@ body { overflow: hidden; }
 
 {% block content %}
 <!-- Sidebar Toggle -->
-<button class="sidebar-toggle open" id="sidebarToggle" title="Скрыть/показать панель">☰</button>
+<button class="sidebar-toggle open" id="sidebarToggle" title="☰">☰</button>
 
 <!-- Sidebar -->
 <div class="map-sidebar" id="mapSidebar">
     <div class="sidebar-header">
-        <h2 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">🗺 Карта маршрутов</h2>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Кликните на маркер для информации</p>
+        <h2 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;" data-t="map_title">🗺 Карта маршрутов</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted);" data-t="map_subtitle">Кликните на маркер для информации</p>
     </div>
 
     <div class="sidebar-search">
         <div style="position: relative;">
-            <input type="text" id="sidebarSearch" class="form-input" placeholder="Поиск маршрутов..."
+            <input type="text" id="sidebarSearch" class="form-input"
+                   data-tp="map_search_ph" placeholder="Поиск маршрутов..."
                    style="padding-left: 36px; padding-top: 9px; padding-bottom: 9px; font-size: 0.85rem;">
             <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:0.9rem;">🔍</span>
         </div>
     </div>
 
     <div class="sidebar-filters">
-        <button class="category-chip active" data-filter="">Все</button>
-        <button class="category-chip" data-filter="easy" style="color: var(--success);">🟢 Лёгкие</button>
-        <button class="category-chip" data-filter="medium" style="color: var(--warning);">🟡 Средние</button>
-        <button class="category-chip" data-filter="hard" style="color: var(--error);">🔴 Сложные</button>
-        <button class="category-chip" data-filter="places">📍 Места</button>
+        <button class="category-chip active" data-filter="" data-t="map_filter_all">Все</button>
+        <button class="category-chip" data-filter="easy" style="color: var(--success);" data-t="map_filter_easy">🟢 Лёгкие</button>
+        <button class="category-chip" data-filter="medium" style="color: var(--warning);" data-t="map_filter_medium">🟡 Средние</button>
+        <button class="category-chip" data-filter="hard" style="color: var(--error);" data-t="map_filter_hard">🔴 Сложные</button>
+        <button class="category-chip" data-filter="places" data-t="map_filter_places">📍 Места</button>
     </div>
 
-    <div class="sidebar-results" id="sidebarResults">
-        <!-- Populated by JS -->
-    </div>
+    <div class="sidebar-results" id="sidebarResults"></div>
 </div>
 
 <!-- Map -->
@@ -86,13 +85,11 @@ body { overflow: hidden; }
     const routesData = {{ routes|safe }};
     const placesData = {{ places|safe }};
 
-    // Init map
     const map = KGDMap.initMap('fullPageMap', {
         center: [{{ map_lat }}, {{ map_lng }}],
         zoom: {{ map_zoom }},
     });
 
-    // Add to map
     const routeMarkers = [];
     const placeMarkers = [];
 
@@ -152,7 +149,6 @@ body { overflow: hidden; }
         });
     }
 
-    // Sidebar population
     function renderSidebar(routes) {
         const container = document.getElementById('sidebarResults');
         if (!routes.length) {
@@ -160,7 +156,7 @@ body { overflow: hidden; }
             return;
         }
         container.innerHTML = routes.map(r => `
-            <div class="sidebar-route-item" data-slug="${r.slug}" onclick="window.location='/routes/${r.slug}/'">
+            <div class="sidebar-route-item" onclick="window.location='/routes/${r.slug}/'">
                 <div class="sidebar-route-thumb" style="background: linear-gradient(135deg, #1E0B4B, #4C1D95); display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🏔</div>
                 <div class="sidebar-route-info">
                     <div class="sidebar-route-title">${r.title}</div>
@@ -176,16 +172,11 @@ body { overflow: hidden; }
 
     renderSidebar(routesData);
 
-    // Search
     document.getElementById('sidebarSearch').addEventListener('input', function() {
         const q = this.value.toLowerCase();
-        const filtered = routesData.filter(r =>
-            r.title.toLowerCase().includes(q)
-        );
-        renderSidebar(filtered);
+        renderSidebar(routesData.filter(r => r.title.toLowerCase().includes(q)));
     });
 
-    // Difficulty filter
     document.querySelectorAll('.sidebar-filters .category-chip').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.sidebar-filters .category-chip').forEach(b => b.classList.remove('active'));
@@ -204,7 +195,6 @@ body { overflow: hidden; }
         });
     });
 
-    // Sidebar toggle
     const sidebar = document.getElementById('mapSidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     toggleBtn.addEventListener('click', () => {

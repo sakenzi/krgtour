@@ -13,21 +13,24 @@
 {% block content %}
 <div class="container places-page">
     <div class="breadcrumbs" style="margin-bottom: 20px;">
-        <a href="/">Главная</a><span class="breadcrumb-sep">/</span><span>Места</span>
+        <a href="/" data-t="breadcrumb_home">Главная</a>
+        <span class="breadcrumb-sep">/</span>
+        <span data-t="breadcrumb_places">Места</span>
     </div>
 
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px;">
         <div>
-            <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;">📍 Интересные места</h1>
-            <p style="color: var(--text-secondary); margin-top: 4px;">Достопримечательности Карагандинского региона</p>
+            <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;" data-t="places_title">📍 Интересные места</h1>
+            <p style="color: var(--text-secondary); margin-top: 4px;" data-t="places_subtitle">Достопримечательности Карагандинского региона</p>
         </div>
         <form method="get" style="display: flex; gap: 8px;">
             <div style="position: relative;">
-                <input type="text" name="q" value="{{ query }}" placeholder="Поиск мест..."
-                       class="form-input" style="padding-left: 36px; width: 240px;">
+                <input type="text" name="q" value="{{ query }}"
+                       class="form-input" style="padding-left: 36px; width: 240px;"
+                       data-tp="places_search_ph" placeholder="Поиск мест...">
                 <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%);">🔍</span>
             </div>
-            <button type="submit" class="btn btn-primary">Найти</button>
+            <button type="submit" class="btn btn-primary" data-t="places_find">Найти</button>
         </form>
     </div>
 
@@ -38,7 +41,10 @@
 
     <!-- Category chips -->
     <div class="categories-scroll" style="margin-bottom: 28px;">
-        <a href="{% url 'places:list' %}{% if query %}?q={{ query }}{% endif %}" class="category-chip {% if not current_category %}active{% endif %}">🌐 Все</a>
+        <a href="{% url 'places:list' %}{% if query %}?q={{ query }}{% endif %}"
+           class="category-chip {% if not current_category %}active{% endif %}" data-t="places_all">
+            🌐 Все
+        </a>
         {% for cat in categories %}
         <a href="{% url 'places:list' %}?category={{ cat.slug }}{% if query %}&q={{ query }}{% endif %}"
            class="category-chip {% if current_category == cat.slug %}active{% endif %}">
@@ -85,9 +91,9 @@
             </div>
             <div class="card-footer">
                 <div style="font-size: 0.82rem; color: var(--text-muted);">
-                    {% if place.entry_price %}💰 {{ place.entry_price|intcomma }} ₸{% else %}🆓 Бесплатно{% endif %}
+                    {% if place.entry_price %}💰 {{ place.entry_price|intcomma }} ₸ <span data-t="places_entry">входной билет</span>{% else %}<span data-t="places_free">🆓 Бесплатно</span>{% endif %}
                 </div>
-                <a href="{{ place.get_absolute_url }}" class="btn btn-primary btn-sm">Подробнее →</a>
+                <a href="{{ place.get_absolute_url }}" class="btn btn-primary btn-sm" data-t="places_details">Подробнее →</a>
             </div>
         </article>
         {% endfor %}
@@ -106,8 +112,8 @@
     {% else %}
     <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
         <div style="font-size: 4rem; margin-bottom: 16px;">📍</div>
-        <h2 style="font-family: var(--font-display);">Места не найдены</h2>
-        <a href="{% url 'places:list' %}" class="btn btn-primary" style="margin-top: 20px;">Показать все</a>
+        <h2 style="font-family: var(--font-display);" data-t="places_empty">Места не найдены</h2>
+        <a href="{% url 'places:list' %}" class="btn btn-primary" style="margin-top: 20px;" data-t="places_show_all">Показать все</a>
     </div>
     {% endif %}
 </div>
