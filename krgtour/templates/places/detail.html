@@ -173,12 +173,12 @@
 <script src="/static/js/map.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const map = KGDMap.initMap('placeMap', {
-        center: [{{ place.lat }}, {{ place.lng }}],
-        zoom: 14
-    });
-    L.marker([{{ place.lat }}, {{ place.lng }}]).addTo(map)
-        .bindPopup('<div class="map-popup"><div class="map-popup-title">{{ place.name }}</div></div>');
+    KGDMap.initPlaceMap(
+        'placeMap',
+        '{{ place.lat|default:"" }}',
+        '{{ place.lng|default:"" }}',
+        '{{ place.name|escapejs }}'
+    );
 });
 </script>
 {% endblock %}

@@ -2,6 +2,9 @@
 Places app views.
 """
 
+import json
+from decimal import Decimal
+
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -12,6 +15,13 @@ from django.conf import settings
 
 from .models import Place, PlaceCategory, PlaceReview, PlaceFavorite
 from .forms import PlaceReviewForm
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 
 def place_list_view(request):
@@ -31,26 +41,40 @@ def place_list_view(request):
     sort_map = {'rating': '-avg_rating', 'name': 'name', 'new': '-created_at'}
     places = places.order_by(sort_map.get(sort, '-created_at'))
 
-    paginator = Paginator(places, settings.PLACES_PER_PAGE)
+    paginator = Paginator(places, getattr(settings, 'PLACES_PER_PAGE', 12))
     page = request.GET.get('page', 1)
     places_page = paginator.get_page(page)
 
     categories = PlaceCategory.objects.all()
 
-    # Places for map
-    map_places = list(Place.objects.filter(is_active=True, lat__isnull=False).values(
-        'id', 'name', 'slug', 'lat', 'lng', 'category__name', 'category__icon', 'avg_rating'
-    ))
+    # Места для карты — сериализуем в JSON здесь, а не в шаблоне
+    map_places_qs = Place.objects.filter(is_active=True, lat__isnull=False).values(
+        'name', 'slug', 'lat', 'lng', 'category__name', 'category__icon', 'avg_rating'
+    )
+    map_places_list = []
+    for p in map_places_qs:
+        try:
+            map_places_list.append({
+                'slug':          str(p['slug']),
+                'name':          str(p['name']),
+                'lat':           float(p['lat']),
+                'lng':           float(p['lng']),
+                'icon':          str(p['category__icon'] or '📍'),
+                'category_name': str(p['category__name'] or ''),
+                'avg_rating':    float(p['avg_rating'] or 0) or None,
+            })
+        except (TypeError, ValueError):
+            continue
 
     return render(request, 'places/list.html', {
-        'places': places_page,
-        'categories': categories,
-        'map_places': map_places,
-        'query': query,
+        'places':          places_page,
+        'categories':      categories,
+        'map_places_json': json.dumps(map_places_list, ensure_ascii=False, cls=DecimalEncoder),
+        'query':           query,
         'current_category': category,
-        'map_lat': settings.MAP_DEFAULT_LAT,
-        'map_lng': settings.MAP_DEFAULT_LNG,
-        'map_zoom': settings.MAP_DEFAULT_ZOOM,
+        'map_lat':  getattr(settings, 'MAP_DEFAULT_LAT', 49.8047),
+        'map_lng':  getattr(settings, 'MAP_DEFAULT_LNG', 73.1094),
+        'map_zoom': getattr(settings, 'MAP_DEFAULT_ZOOM', 11),
     })
 
 
@@ -68,11 +92,11 @@ def place_detail_view(request, slug):
             review_form = PlaceReviewForm()
 
     return render(request, 'places/detail.html', {
-        'place': place,
-        'reviews': reviews,
-        'is_favorite': is_favorite,
-        'user_review': user_review,
-        'review_form': review_form,
+        'place':         place,
+        'reviews':       reviews,
+        'is_favorite':   is_favorite,
+        'user_review':   user_review,
+        'review_form':   review_form,
         'nearby_routes': place.nearby_routes,
     })
 
@@ -101,7 +125,6 @@ def add_place_review(request, slug):
         review.place = place
         review.user = request.user
         review.save()
-        # Update avg rating
         reviews = PlaceReview.objects.filter(place=place, is_approved=True)
         count = reviews.count()
         if count:
@@ -118,17 +141,22 @@ def places_geojson_api(request):
     places = Place.objects.filter(is_active=True, lat__isnull=False)
     features = []
     for place in places:
+        if not place.lat or not place.lng:
+            continue
         features.append({
             'type': 'Feature',
-            'geometry': {'type': 'Point', 'coordinates': [place.lng, place.lat]},
+            'geometry': {
+                'type':        'Point',
+                'coordinates': [float(place.lng), float(place.lat)],
+            },
             'properties': {
-                'id': str(place.id),
-                'name': place.name,
-                'slug': place.slug,
-                'category': place.category.name if place.category else '',
-                'icon': place.category.icon if place.category else '📍',
-                'avg_rating': place.avg_rating,
-                'url': place.get_absolute_url(),
-            }
+                'id':         str(place.id),
+                'name':       place.name,
+                'slug':       place.slug,
+                'category':   place.category.name if place.category else '',
+                'icon':       place.category.icon if place.category else '📍',
+                'avg_rating': float(place.avg_rating or 0) or None,
+                'url':        place.get_absolute_url(),
+            },
         })
     return JsonResponse({'type': 'FeatureCollection', 'features': features})

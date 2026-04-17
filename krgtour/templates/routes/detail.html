@@ -297,15 +297,5 @@
 
 {% block extra_js %}
 <script src="/static/js/map.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const mapEl = document.getElementById('routeDetailMap');
-    if (!mapEl) return;
-    const points = {{ points|safe }};
-    const difficulty = '{{ route.difficulty }}';
-    if (points.length > 0) {
-        KGDMap.initRouteDetailMap('routeDetailMap', { points, difficulty });
-    }
-});
-</script>
+{# Инициализация происходит автоматически через data-атрибуты в map.js #}
 {% endblock %}

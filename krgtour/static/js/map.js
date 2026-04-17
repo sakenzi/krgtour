@@ -74,12 +74,31 @@ const KGDMap = (function() {
 
     // ============ BASE MAP INIT ============
     function initMap(containerId, options = {}) {
+        const el = document.getElementById(containerId);
+        if (!el) {
+            console.warn('Map container not found:', containerId);
+            return null;
+        }
+
+        // Prevent double initialization
+        if (el._leaflet_id) {
+            console.warn('Map already initialized:', containerId);
+            return null;
+        }
+
         const defaults = {
             center: [49.8047, 73.1094], // Karaganda
             zoom: 11,
             zoomControl: true,
         };
         const opts = { ...defaults, ...options };
+
+        // Validate center coordinates
+        if (!opts.center || opts.center[0] == null || opts.center[1] == null ||
+            isNaN(opts.center[0]) || isNaN(opts.center[1])) {
+            console.warn('Invalid map center coordinates:', opts.center, '— using Karaganda default');
+            opts.center = defaults.center;
+        }
 
         const map = L.map(containerId, {
             center: opts.center,
@@ -111,19 +130,20 @@ const KGDMap = (function() {
 
     // ============ ADD ROUTES TO MAP ============
     function addRoutesToMap(map, routes, options = {}) {
-        const { onClick, cluster = false } = options;
+        if (!map) return { markers: [], routeLines: [] };
+        const { onClick } = options;
         const markers = [];
         const routeLines = [];
 
         routes.forEach(route => {
-            if (!route.start_lat || !route.start_lng) return;
+            if (!route.start_lat || !route.start_lng ||
+                isNaN(route.start_lat) || isNaN(route.start_lng)) return;
 
             const marker = L.marker(
-                [route.start_lat, route.start_lng],
+                [parseFloat(route.start_lat), parseFloat(route.start_lng)],
                 { icon: createRouteIcon(route.difficulty) }
             );
 
-            // Popup HTML
             const diffLabels = { easy: 'Лёгкий', medium: 'Средний', hard: 'Сложный', expert: 'Экстрим' };
             const popupHtml = `
                 <div class="map-popup">
@@ -146,16 +166,19 @@ const KGDMap = (function() {
             marker.addTo(map);
             markers.push(marker);
 
-            // Draw route line if GeoJSON available
             if (route.route_geojson) {
-                const line = L.geoJSON(route.route_geojson, {
-                    style: {
-                        color: DIFFICULTY_COLORS[route.difficulty] || '#7C3AED',
-                        weight: 4,
-                        opacity: 0.8,
-                    }
-                }).addTo(map);
-                routeLines.push(line);
+                try {
+                    const line = L.geoJSON(route.route_geojson, {
+                        style: {
+                            color: DIFFICULTY_COLORS[route.difficulty] || '#7C3AED',
+                            weight: 4,
+                            opacity: 0.8,
+                        }
+                    }).addTo(map);
+                    routeLines.push(line);
+                } catch (e) {
+                    console.warn('Invalid GeoJSON for route:', route.slug, e);
+                }
             }
         });
 
@@ -164,12 +187,14 @@ const KGDMap = (function() {
 
     // ============ ADD PLACES TO MAP ============
     function addPlacesToMap(map, places) {
+        if (!map) return [];
         const markers = [];
         places.forEach(place => {
-            if (!place.lat || !place.lng) return;
+            if (!place.lat || !place.lng ||
+                isNaN(place.lat) || isNaN(place.lng)) return;
 
             const marker = L.marker(
-                [place.lat, place.lng],
+                [parseFloat(place.lat), parseFloat(place.lng)],
                 { icon: createPlaceIcon(place.icon || '📍') }
             );
 
@@ -193,26 +218,50 @@ const KGDMap = (function() {
 
     // ============ DRAW ROUTE DETAIL MAP ============
     function initRouteDetailMap(containerId, routeData) {
+        const el = document.getElementById(containerId);
+        if (!el) return null;
+
+        // Prevent double initialization
+        if (el._leaflet_id) return null;
+
         const { points, geojson, title, difficulty } = routeData;
 
-        if (!points || !points.length) return;
+        if (!points || !points.length) {
+            console.warn('No points provided for route detail map');
+            return null;
+        }
 
-        const center = [points[0].lat, points[0].lng];
+        // Filter only valid points
+        const validPoints = points.filter(p =>
+            p && p.lat != null && p.lng != null &&
+            !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lng))
+        );
+
+        if (!validPoints.length) {
+            console.warn('No valid coordinates in route points');
+            el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6B7280;font-size:0.9rem;">📍 Координаты маршрута не заданы</div>';
+            return null;
+        }
+
+        const firstPoint = validPoints[0];
+        const center = [parseFloat(firstPoint.lat), parseFloat(firstPoint.lng)];
         const map = initMap(containerId, { center, zoom: 13 });
+        if (!map) return null;
 
-        // Add all waypoints
-        points.forEach((point, i) => {
+        // Add markers for all valid points
+        validPoints.forEach((point, i) => {
             const marker = L.marker(
-                [point.lat, point.lng],
-                { icon: createWaypointIcon(point.point_type, i + 1) }
+                [parseFloat(point.lat), parseFloat(point.lng)],
+                { icon: createWaypointIcon(point.point_type || 'waypoint', i + 1) }
             );
-            marker.bindPopup(`<div class="map-popup"><div class="map-popup-title">${point.name}</div></div>`);
+            const name = point.name || `Точка ${i + 1}`;
+            marker.bindPopup(`<div class="map-popup"><div class="map-popup-title">${name}</div></div>`);
             marker.addTo(map);
         });
 
-        // Draw line between points
-        if (points.length >= 2) {
-            const coords = points.map(p => [p.lat, p.lng]);
+        // Draw polyline between points
+        if (validPoints.length >= 2) {
+            const coords = validPoints.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
             const line = L.polyline(coords, {
                 color: DIFFICULTY_COLORS[difficulty] || '#7C3AED',
                 weight: 5,
@@ -220,30 +269,66 @@ const KGDMap = (function() {
                 dashArray: null,
             }).addTo(map);
 
-            map.fitBounds(line.getBounds(), { padding: [40, 40] });
+            try {
+                map.fitBounds(line.getBounds(), { padding: [40, 40] });
+            } catch (e) {
+                console.warn('fitBounds error:', e);
+            }
         }
+
+        return map;
+    }
+
+    // ============ PLACE MAP ============
+    function initPlaceMap(containerId, lat, lng, name) {
+        const el = document.getElementById(containerId);
+        if (!el) return null;
+
+        if (el._leaflet_id) return null;
+
+        const parsedLat = parseFloat(lat);
+        const parsedLng = parseFloat(lng);
+
+        if (isNaN(parsedLat) || isNaN(parsedLng)) {
+            console.warn('Invalid place coordinates:', lat, lng);
+            el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6B7280;font-size:0.9rem;">📍 Координаты места не заданы</div>';
+            return null;
+        }
+
+        const map = initMap(containerId, { center: [parsedLat, parsedLng], zoom: 14 });
+        if (!map) return null;
+
+        L.marker([parsedLat, parsedLng])
+            .addTo(map)
+            .bindPopup(`<div class="map-popup"><div class="map-popup-title">${name || ''}</div></div>`);
 
         return map;
     }
 
     // ============ ADMIN MAP EDITOR ============
     function initAdminMapEditor(containerId, options = {}) {
+        const el = document.getElementById(containerId);
+        if (!el || el._leaflet_id) return null;
+
         const { existingPoints = [], onPointsChange } = options;
 
         const map = initMap(containerId, { zoom: 12 });
+        if (!map) return null;
+
         let points = [...existingPoints];
         let markers = [];
         let polyline = null;
 
-        // Render existing points
         function renderPoints() {
             markers.forEach(m => map.removeLayer(m));
             markers = [];
             if (polyline) map.removeLayer(polyline);
 
             points.forEach((point, i) => {
-                const marker = L.marker([point.lat, point.lng], {
-                    icon: createWaypointIcon(point.type, i + 1),
+                if (!point || point.lat == null || point.lng == null) return;
+
+                const marker = L.marker([parseFloat(point.lat), parseFloat(point.lng)], {
+                    icon: createWaypointIcon(point.type || 'waypoint', i + 1),
                     draggable: true,
                 });
 
@@ -264,11 +349,7 @@ const KGDMap = (function() {
                 const popupHtml = `
                     <div style="padding: 8px; min-width: 160px;">
                         <b>${i + 1}. ${point.name || 'Точка'}</b><br>
-                        <small style="color: #6B7280;">${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}</small><br>
-                        <button onclick="this.closest('.leaflet-popup').dispatchEvent(new Event('deletepoint'))"
-                            style="margin-top: 6px; padding: 3px 10px; background: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                            🗑 Удалить
-                        </button>
+                        <small style="color: #6B7280;">${parseFloat(point.lat).toFixed(5)}, ${parseFloat(point.lng).toFixed(5)}</small>
                     </div>
                 `;
                 marker.bindPopup(popupHtml);
@@ -281,14 +362,14 @@ const KGDMap = (function() {
 
         function drawLine() {
             if (polyline) map.removeLayer(polyline);
-            if (points.length >= 2) {
-                polyline = L.polyline(points.map(p => [p.lat, p.lng]), {
+            const validPts = points.filter(p => p && p.lat != null && p.lng != null);
+            if (validPts.length >= 2) {
+                polyline = L.polyline(validPts.map(p => [parseFloat(p.lat), parseFloat(p.lng)]), {
                     color: '#7C3AED', weight: 4, opacity: 0.8,
                 }).addTo(map);
             }
         }
 
-        // Click to add point
         map.on('click', (e) => {
             const name = prompt(`Название точки #${points.length + 1}:`, `Точка ${points.length + 1}`);
             if (name !== null) {
@@ -304,7 +385,6 @@ const KGDMap = (function() {
             }
         });
 
-        // Update start/end hidden inputs
         function updateHiddenFields(pts) {
             if (pts.length > 0) {
                 const startLatEl = document.getElementById('id_start_lat');
@@ -320,15 +400,20 @@ const KGDMap = (function() {
                 if (endLngEl) endLngEl.value = last.lng;
             }
 
-            // Update route_points_json hidden field
             const pointsJson = document.getElementById('routePointsJson');
             if (pointsJson) pointsJson.value = JSON.stringify(pts);
         }
 
         renderPoints();
-        if (existingPoints.length >= 2) {
-            const coords = existingPoints.map(p => [p.lat, p.lng]);
-            map.fitBounds(L.latLngBounds(coords), { padding: [40, 40] });
+
+        const validExisting = existingPoints.filter(p => p && p.lat != null && p.lng != null);
+        if (validExisting.length >= 2) {
+            const coords = validExisting.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
+            try {
+                map.fitBounds(L.latLngBounds(coords), { padding: [40, 40] });
+            } catch (e) {
+                console.warn('fitBounds error:', e);
+            }
         }
 
         return { map, getPoints: () => points };
@@ -336,9 +421,12 @@ const KGDMap = (function() {
 
     // ============ FULL PAGE MAP ============
     function initFullMap(containerId, { routes = [], places = [] }) {
-        const map = initMap(containerId, { zoom: 10 });
+        const el = document.getElementById(containerId);
+        if (!el || el._leaflet_id) return null;
 
-        // Layer groups
+        const map = initMap(containerId, { zoom: 10 });
+        if (!map) return null;
+
         const routesLayer = L.layerGroup();
         const placesLayer = L.layerGroup();
 
@@ -359,6 +447,7 @@ const KGDMap = (function() {
     return {
         initMap,
         initRouteDetailMap,
+        initPlaceMap,
         initAdminMapEditor,
         initFullMap,
         addRoutesToMap,
@@ -367,11 +456,12 @@ const KGDMap = (function() {
 
 })();
 
-// Auto-initialize maps with data attributes
+// ============ AUTO-INITIALIZE ============
 document.addEventListener('DOMContentLoaded', () => {
-    // Route detail map
+
+    // Route detail map (only if not already initialized by inline script)
     const routeMapEl = document.getElementById('routeDetailMap');
-    if (routeMapEl) {
+    if (routeMapEl && !routeMapEl._leaflet_id) {
         const pointsData = routeMapEl.dataset.points;
         const difficulty = routeMapEl.dataset.difficulty;
         if (pointsData) {
@@ -380,32 +470,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (points.length > 0) {
                     KGDMap.initRouteDetailMap('routeDetailMap', { points, difficulty });
                 }
-            } catch (e) { console.error('Map init error:', e); }
+            } catch (e) {
+                console.error('Route map init error:', e);
+            }
         }
     }
 
     // Full map page
     const fullMapEl = document.getElementById('fullPageMap');
-    if (fullMapEl) {
+    if (fullMapEl && !fullMapEl._leaflet_id) {
         try {
             const routes = JSON.parse(fullMapEl.dataset.routes || '[]');
             const places = JSON.parse(fullMapEl.dataset.places || '[]');
             KGDMap.initFullMap('fullPageMap', { routes, places });
-        } catch (e) { console.error('Map init error:', e); }
+        } catch (e) {
+            console.error('Full map init error:', e);
+        }
     }
 
     // Admin editor map
     const adminMapEl = document.getElementById('adminEditorMap');
-    if (adminMapEl) {
+    if (adminMapEl && !adminMapEl._leaflet_id) {
         try {
             const existingPoints = JSON.parse(adminMapEl.dataset.points || '[]');
-            const editor = KGDMap.initAdminMapEditor('adminEditorMap', {
+            KGDMap.initAdminMapEditor('adminEditorMap', {
                 existingPoints,
                 onPointsChange: (pts) => {
                     const el = document.getElementById('routePointsJson');
                     if (el) el.value = JSON.stringify(pts);
                 }
             });
-        } catch (e) { console.error('Admin map init error:', e); }
+        } catch (e) {
+            console.error('Admin map init error:', e);
+        }
     }
 });
