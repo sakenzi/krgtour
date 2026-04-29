@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Погода по Карагандинской области - КарагандаТур{% endblock %}
+
+{% block extra_css %}
+<style>
+.weather-page {
+    margin-top: var(--nav-height);
+    background: #F8FAFC;
+    min-height: calc(100vh - var(--nav-height));
+}
+
+.weather-hero {
+    background: linear-gradient(135deg, #0F172A 0%, #1D4ED8 52%, #059669 100%);
+    color: white;
+    padding: 44px 24px 36px;
+}
+
+.weather-hero-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: end;
+}
+
+.weather-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.65rem, 3vw, 2.45rem);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.weather-subtitle {
+    color: rgba(255,255,255,0.78);
+    max-width: 640px;
+    margin-top: 10px;
+}
+
+.weather-updated {
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.1);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.weather-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.weather-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.weather-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.weather-tabs::-webkit-scrollbar { display: none; }
+
+.weather-tab {
+    padding: 8px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+    background: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.weather-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.weather-search {
+    max-width: 280px;
+}
+
+.weather-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+    gap: 16px;
+}
+
+.weather-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.weather-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.weather-place {
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.weather-type {
+    display: inline-flex;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    background: #EFF6FF;
+    color: #1D4ED8;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.weather-temp {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #0F172A;
+}
+
+.weather-condition {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+
+.weather-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: auto;
+}
+
+.weather-metric {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-sm);
+    padding: 8px;
+}
+
+.weather-metric-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.weather-metric-value {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.weather-loading,
+.weather-empty {
+    grid-column: 1 / -1;
+    background: white;
+    border: 1px dashed var(--border-hover);
+    border-radius: var(--radius-lg);
+    padding: 34px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+    .weather-hero-inner { grid-template-columns: 1fr; align-items: start; }
+    .weather-updated { white-space: normal; }
+    .weather-search { max-width: none; width: 100%; }
+    .weather-toolbar { align-items: stretch; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="weather-page">
+    <header class="weather-hero">
+        <div class="weather-hero-inner">
+            <div>
+                <h1 class="weather-title">Погода Карагандинской области</h1>
+                <p class="weather-subtitle">Прогноз для городов, районов и популярных зон отдыха. Данные обновляются автоматически при открытии страницы.</p>
+            </div>
+            <div class="weather-updated" id="weatherUpdated">Обновление...</div>
+        </div>
+    </header>
+
+    <div class="weather-shell">
+        <div class="weather-toolbar">
+            <div class="weather-tabs" id="weatherTabs">
+                <button class="weather-tab active" data-filter="">Все</button>
+                <button class="weather-tab" data-filter="Город">Города</button>
+                <button class="weather-tab" data-filter="Район">Районы</button>
+                <button class="weather-tab" data-filter="Зона отдыха">Зоны отдыха</button>
+            </div>
+            <input class="form-input weather-search" id="weatherSearch" type="search" placeholder="Найти место...">
+        </div>
+
+        <div class="weather-grid" id="weatherGrid">
+            <div class="weather-loading">Загружаем прогноз...</div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var locations = {{ locations_json|safe }};
+    var weatherByName = {};
+    var currentFilter = '';
+    var searchQuery = '';
+
+    var grid = document.getElementById('weatherGrid');
+    var updated = document.getElementById('weatherUpdated');
+    var weatherCodeText = {
+        0: 'Ясно',
+        1: 'Преимущественно ясно',
+        2: 'Переменная облачность',
+        3: 'Пасмурно',
+        45: 'Туман',
+        48: 'Изморозь',
+        51: 'Слабая морось',
+        53: 'Морось',
+        55: 'Сильная морось',
+        61: 'Небольшой дождь',
+        63: 'Дождь',
+        65: 'Сильный дождь',
+        71: 'Небольшой снег',
+        73: 'Снег',
+        75: 'Сильный снег',
+        80: 'Кратковременный дождь',
+        81: 'Ливневый дождь',
+        82: 'Сильный ливень',
+        95: 'Гроза'
+    };
+
+    function render() {
+        var items = locations.filter(function (location) {
+            var matchesType = !currentFilter || location.type === currentFilter;
+            var matchesSearch = !searchQuery || location.name.toLowerCase().indexOf(searchQuery) !== -1;
+            return matchesType && matchesSearch;
+        });
+
+        if (!items.length) {
+            grid.innerHTML = '<div class="weather-empty">Ничего не найдено</div>';
+            return;
+        }
+
+        grid.innerHTML = items.map(function (location) {
+            var weather = weatherByName[location.name];
+            if (!weather) {
+                return '<article class="weather-card">' +
+                    '<div class="weather-card-head"><div><div class="weather-place">' + location.name + '</div><span class="weather-type">' + location.type + '</span></div></div>' +
+                    '<div class="weather-condition">Нет данных</div>' +
+                '</article>';
+            }
+
+            return '<article class="weather-card">' +
+                '<div class="weather-card-head">' +
+                    '<div><div class="weather-place">' + location.name + '</div><span class="weather-type">' + location.type + '</span></div>' +
+                    '<div class="weather-temp">' + Math.round(weather.temperature_2m) + '°</div>' +
+                '</div>' +
+                '<div class="weather-condition">' + (weatherCodeText[weather.weather_code] || 'Погодные условия') + '</div>' +
+                '<div class="weather-metrics">' +
+                    '<div class="weather-metric"><span class="weather-metric-label">Ветер</span><span class="weather-metric-value">' + Math.round(weather.wind_speed_10m) + ' км/ч</span></div>' +
+                    '<div class="weather-metric"><span class="weather-metric-label">Осадки</span><span class="weather-metric-value">' + (weather.precipitation || 0) + ' мм</span></div>' +
+                    '<div class="weather-metric"><span class="weather-metric-label">Ощущ.</span><span class="weather-metric-value">' + Math.round(weather.apparent_temperature) + '°</span></div>' +
+                '</div>' +
+            '</article>';
+        }).join('');
+    }
+
+    function loadWeather() {
+        var latitudes = locations.map(function (location) { return location.lat; }).join(',');
+        var longitudes = locations.map(function (location) { return location.lng; }).join(',');
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + latitudes +
+            '&longitude=' + longitudes +
+            '&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=Asia%2FAlmaty';
+
+        fetch(url)
+            .then(function (response) {
+                if (!response.ok) throw new Error('weather request failed');
+                return response.json();
+            })
+            .then(function (data) {
+                var rows = Array.isArray(data) ? data : [data];
+                rows.forEach(function (row, index) {
+                    if (locations[index] && row.current) {
+                        weatherByName[locations[index].name] = row.current;
+                    }
+                });
+                updated.textContent = 'Обновлено: ' + new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                render();
+            })
+            .catch(function () {
+                updated.textContent = 'Погода временно недоступна';
+                grid.innerHTML = '<div class="weather-empty">Не удалось загрузить прогноз. Проверьте подключение и обновите страницу.</div>';
+            });
+    }
+
+    document.querySelectorAll('.weather-tab').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.querySelectorAll('.weather-tab').forEach(function (tab) { tab.classList.remove('active'); });
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            render();
+        });
+    });
+
+    document.getElementById('weatherSearch').addEventListener('input', function () {
+        searchQuery = this.value.trim().toLowerCase();
+        render();
+    });
+
+    loadWeather();
+})();
+</script>
+{% endblock %}

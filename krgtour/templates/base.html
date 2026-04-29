@@ -105,6 +105,9 @@
                 <a href="{% url 'routes:map' %}" class="nav-link {% if request.resolver_match.url_name == 'map' %}active{% endif %}" data-t="nav_map">
                     🗺 Карта
                 </a>
+                <a href="{% url 'routes:weather' %}" class="nav-link {% if request.resolver_match.url_name == 'weather' %}active{% endif %}">
+                    Погода
+                </a>
                 <a href="{% url 'ai_assistant:chat' %}" class="nav-link ai-link {% if request.resolver_match.app_name == 'ai_assistant' %}active{% endif %}" data-t="nav_ai">
                     ✨ AI Ассистент
                 </a>
@@ -216,6 +219,7 @@
                 <div class="footer-col">
                     <h4 class="footer-heading" data-t="footer_services">Сервисы</h4>
                     <a href="{% url 'routes:map' %}" class="footer-link" data-t="footer_map">Интерактивная карта</a>
+                    <a href="{% url 'routes:weather' %}" class="footer-link">Погода по области</a>
                     <a href="{% url 'places:list' %}" class="footer-link" data-t="footer_places">Интересные места</a>
                     <a href="{% url 'ai_assistant:chat' %}" class="footer-link" data-t="footer_ai">AI Ассистент</a>
                 </div>

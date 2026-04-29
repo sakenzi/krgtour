@@ -326,6 +326,33 @@ def map_view(request):
     })
 
 
+def weather_view(request):
+    """Weather page for Karaganda region districts and recreation areas."""
+    locations = [
+        {'name': 'Караганда', 'type': 'Город', 'lat': 49.8047, 'lng': 73.1094},
+        {'name': 'Темиртау', 'type': 'Город', 'lat': 50.0549, 'lng': 72.9646},
+        {'name': 'Сарань', 'type': 'Город', 'lat': 49.7908, 'lng': 72.8374},
+        {'name': 'Шахтинск', 'type': 'Город', 'lat': 49.7089, 'lng': 72.5921},
+        {'name': 'Абай', 'type': 'Город', 'lat': 49.6356, 'lng': 72.8619},
+        {'name': 'Бухар-Жырауский район', 'type': 'Район', 'lat': 50.1108, 'lng': 73.1658},
+        {'name': 'Каркаралинский район', 'type': 'Район', 'lat': 49.4129, 'lng': 75.4747},
+        {'name': 'Осакаровский район', 'type': 'Район', 'lat': 50.5622, 'lng': 72.5708},
+        {'name': 'Актогайский район', 'type': 'Район', 'lat': 48.1669, 'lng': 75.3006},
+        {'name': 'Нуринский район', 'type': 'Район', 'lat': 50.9553, 'lng': 73.6722},
+        {'name': 'Улытауский район', 'type': 'Район', 'lat': 48.6350, 'lng': 66.9278},
+        {'name': 'Балхаш', 'type': 'Зона отдыха', 'lat': 46.8481, 'lng': 74.9950},
+        {'name': 'Каркаралинский нацпарк', 'type': 'Зона отдыха', 'lat': 49.4056, 'lng': 75.4886},
+        {'name': 'Шайтанколь', 'type': 'Зона отдыха', 'lat': 49.4170, 'lng': 75.4380},
+        {'name': 'Спасск', 'type': 'Зона отдыха', 'lat': 49.3606, 'lng': 73.5742},
+    ]
+
+    return render(request, 'routes/weather.html', {
+        'locations_json': json.dumps(locations, ensure_ascii=False),
+        'map_lat': getattr(settings, 'MAP_DEFAULT_LAT', 49.8047),
+        'map_lng': getattr(settings, 'MAP_DEFAULT_LNG', 73.1094),
+    })
+
+
 def route_geojson_api(request, slug):
     """API: Return GeoJSON for a specific route."""
     route = get_object_or_404(Route, slug=slug)

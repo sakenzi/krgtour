@@ -106,23 +106,43 @@ const KGDMap = (function() {
             zoomControl: opts.zoomControl,
         });
 
-        // Tile layers
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        // Tile layers. Some public tile providers can temporarily answer with
+        // "access blocked", so the base map has a fallback source.
+        const primaryLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             maxZoom: 19,
+            crossOrigin: true,
         });
 
-        const satelliteLayer = L.tileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            { attribution: 'Tiles © Esri', maxZoom: 19 }
-        );
+        const fallbackLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors, Tiles style by HOT',
+            maxZoom: 19,
+            crossOrigin: true,
+        });
 
-        osmLayer.addTo(map);
+        const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors, SRTM | OpenTopoMap',
+            maxZoom: 17,
+            crossOrigin: true,
+        });
+
+        let fallbackEnabled = false;
+        primaryLayer.on('tileerror', () => {
+            if (fallbackEnabled) return;
+            fallbackEnabled = true;
+            if (map.hasLayer(primaryLayer)) {
+                map.removeLayer(primaryLayer);
+                fallbackLayer.addTo(map);
+            }
+        });
+
+        primaryLayer.addTo(map);
 
         // Layer control
         L.control.layers({
-            '🗺 Карта': osmLayer,
-            '🛰 Спутник': satelliteLayer,
+            'Карта': primaryLayer,
+            'Карта резерв': fallbackLayer,
+            'Рельеф': topoLayer,
         }).addTo(map);
 
         return map;

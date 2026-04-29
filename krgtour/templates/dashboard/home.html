@@ -1,171 +1,366 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Панель управления — КарагандаТур{% endblock %}
+
+{% block title %}Панель управления - КарагандаТур{% endblock %}
+
 {% block extra_css %}
 <style>
-.dashboard-layout { display: flex; min-height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
-.dashboard-sidebar { width: 240px; background: #0F0A2E; padding: 20px 12px; flex-shrink: 0; position: sticky; top: var(--nav-height); height: calc(100vh - var(--nav-height)); overflow-y: auto; }
-.dashboard-main { flex: 1; padding: 32px; background: var(--bg-secondary); overflow-x: auto; }
-.dash-nav-logo { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: white; padding: 8px 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.dashboard-layout {
+    display: flex;
+    min-height: calc(100vh - var(--nav-height));
+    margin-top: var(--nav-height);
+    background: #F8FAFC;
+}
+
+.dashboard-sidebar {
+    width: 260px;
+    background: #0F172A;
+    padding: 22px 14px;
+    flex-shrink: 0;
+    position: sticky;
+    top: var(--nav-height);
+    height: calc(100vh - var(--nav-height));
+    overflow-y: auto;
+}
+
+.dashboard-main {
+    flex: 1;
+    padding: 30px;
+    overflow-x: auto;
+}
+
+.dash-nav-logo {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    color: white;
+    padding: 8px 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dash-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    color: currentColor;
+    font-size: 0.72rem;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.dash-title {
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+.dash-muted {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.dash-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.dash-stat-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow-sm);
+}
+
+.dash-stat-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.dash-stat-value {
+    font-family: var(--font-display);
+    font-size: 1.65rem;
+    font-weight: 800;
+    line-height: 1.05;
+}
+
+.dash-stat-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 22px;
+    align-items: start;
+}
+
+.dash-panel {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.dash-panel-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.dash-panel-title {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.dash-table-wrap { overflow-x: auto; }
+.dash-table { width: 100%; border-collapse: collapse; min-width: 680px; }
+.dash-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 800;
+    text-transform: uppercase;
+    background: #F8FAFC;
+}
+.dash-table td {
+    padding: 12px 16px;
+    font-size: 0.86rem;
+    border-top: 1px solid #E2E8F0;
+}
+.dash-table .num { text-align: right; font-weight: 800; }
+
+.status-pill {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.74rem;
+    font-weight: 800;
+}
+.status-confirmed { background: #ECFDF5; color: var(--success); }
+.status-pending { background: #FFFBEB; color: var(--warning); }
+.status-cancelled { background: #FEF2F2; color: var(--error); }
+.status-default { background: #F1F5F9; color: var(--text-secondary); }
+
+.dash-side-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.dash-route-link,
+.dash-review-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #E2E8F0;
+}
+.dash-route-link:last-child,
+.dash-review-item:last-child { border-bottom: 0; }
+.dash-route-link:hover { background: #F8FAFC; }
+
+.dash-rank {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--purple-100);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+}
+
+.dash-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+@media (max-width: 1050px) {
+    .dashboard-layout { display: block; }
+    .dashboard-sidebar { position: static; width: 100%; height: auto; }
+    .dashboard-main { padding: 22px 16px; }
+    .dash-grid { grid-template-columns: 1fr; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-layout">
     <aside class="dashboard-sidebar">
-        <div class="dash-nav-logo" data-t="dash_management">⚙️ Управление</div>
-        <div class="dash-nav-section" data-t="form_content">Контент</div>
-        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'route_list' %}active{% endif %}" data-t="dash_routes">🏔 Маршруты</a>
-        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item" data-t="dash_new_route">➕ Новый маршрут</a>
-        <div class="dash-nav-section" data-t="form_business">Бизнес</div>
-        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'bookings' %}active{% endif %}" data-t="dash_bookings">📅 Бронирования</a>
-        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'reviews' %}active{% endif %}" data-t="dash_reviews">💬 Отзывы</a>
-        <div class="dash-nav-section" data-t="form_system">Система</div>
-        <a href="{% url 'admin:index' %}" class="dash-nav-item" data-t="dash_admin">⚙️ Django Admin</a>
-        <a href="{% url 'routes:home' %}" class="dash-nav-item" data-t="dash_site">🌐 На сайт</a>
+        <div class="dash-nav-logo"><span class="dash-icon">KG</span> Управление</div>
+        <div class="dash-nav-section">Контент</div>
+        <a href="{% url 'dashboard:route_list' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'route_list' %}active{% endif %}"><span class="dash-icon">RT</span> Маршруты</a>
+        <a href="{% url 'dashboard:route_create' %}" class="dash-nav-item"><span class="dash-icon">+</span> Новый маршрут</a>
+        <div class="dash-nav-section">Бизнес</div>
+        <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'bookings' %}active{% endif %}"><span class="dash-icon">BK</span> Бронирования</a>
+        <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'reviews' %}active{% endif %}"><span class="dash-icon">RV</span> Отзывы</a>
+        <div class="dash-nav-section">Система</div>
+        <a href="{% url 'admin:index' %}" class="dash-nav-item"><span class="dash-icon">AD</span> Django Admin</a>
+        <a href="{% url 'routes:home' %}" class="dash-nav-item"><span class="dash-icon">←</span> На сайт</a>
     </aside>
 
     <main class="dashboard-main">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px;">
+        <div class="dash-header">
             <div>
-                <h1 style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;" data-t="dash_title">Панель управления</h1>
-                <p style="color: var(--text-muted); font-size: 0.875rem;"><span data-t="dash_welcome">Добро пожаловать,</span> {{ request.user.get_full_name|default:request.user.username }}</p>
+                <h1 class="dash-title">Панель управления</h1>
+                <p class="dash-muted">Добро пожаловать, {{ request.user.get_full_name|default:request.user.username }}</p>
             </div>
-            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary" data-t="dash_new_route_btn">➕ Новый маршрут</a>
+            <a href="{% url 'dashboard:route_create' %}" class="btn btn-primary">+ Новый маршрут</a>
         </div>
 
-        <!-- Stats -->
         <div class="dash-stat-grid">
             <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background: var(--purple-100);">🏔</div>
-                <div>
-                    <div class="dash-stat-value">{{ stats.total_routes }}</div>
-                    <div class="dash-stat-label" data-t="dash_active_routes">Активных маршрутов</div>
-                </div>
+                <div class="dash-stat-icon" style="background:#EEF2FF;color:#4F46E5;">RT</div>
+                <div><div class="dash-stat-value">{{ stats.total_routes }}</div><div class="dash-stat-label">Активных маршрутов</div></div>
             </div>
             <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background: #ECFDF5;">📅</div>
-                <div>
-                    <div class="dash-stat-value">{{ stats.total_bookings }}</div>
-                    <div class="dash-stat-label" data-t="dash_total_bookings">Всего бронирований</div>
-                </div>
+                <div class="dash-stat-icon" style="background:#ECFDF5;color:#059669;">BK</div>
+                <div><div class="dash-stat-value">{{ stats.total_bookings }}</div><div class="dash-stat-label">Всего бронирований</div></div>
             </div>
             <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background: #FFFBEB;">⏳</div>
-                <div>
-                    <div class="dash-stat-value" style="color: var(--warning);">{{ stats.pending_bookings }}</div>
-                    <div class="dash-stat-label" data-t="dash_pending">Ожидают подтверждения</div>
-                </div>
+                <div class="dash-stat-icon" style="background:#FFFBEB;color:#D97706;">PN</div>
+                <div><div class="dash-stat-value" style="color:var(--warning);">{{ stats.pending_bookings }}</div><div class="dash-stat-label">Ожидают подтверждения</div></div>
             </div>
             <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background: #F0FDF4;">💰</div>
-                <div>
-                    <div class="dash-stat-value">{{ stats.revenue|intcomma }} ₸</div>
-                    <div class="dash-stat-label" data-t="dash_revenue">Общий доход</div>
-                </div>
+                <div class="dash-stat-icon" style="background:#F0FDF4;color:#16A34A;">₸</div>
+                <div><div class="dash-stat-value">{{ stats.revenue|intcomma }} ₸</div><div class="dash-stat-label">Общий доход</div></div>
             </div>
             <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background: #EFF6FF;">👤</div>
-                <div>
-                    <div class="dash-stat-value">{{ stats.total_users }}</div>
-                    <div class="dash-stat-label" data-t="dash_users">Пользователей</div>
-                </div>
+                <div class="dash-stat-icon" style="background:#EFF6FF;color:#2563EB;">US</div>
+                <div><div class="dash-stat-value">{{ stats.total_users }}</div><div class="dash-stat-label">Пользователей</div></div>
             </div>
             <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background: var(--purple-50);">📍</div>
-                <div>
-                    <div class="dash-stat-value">{{ stats.total_places }}</div>
-                    <div class="dash-stat-label" data-t="dash_places">Активных мест</div>
-                </div>
+                <div class="dash-stat-icon" style="background:#F5F3FF;color:#7C3AED;">PL</div>
+                <div><div class="dash-stat-value">{{ stats.total_places }}</div><div class="dash-stat-label">Активных мест</div></div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; flex-wrap: wrap;">
-            <!-- Recent Bookings -->
-            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
-                <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="font-family: var(--font-display); font-size: 1rem; font-weight: 700;" data-t="dash_recent_bookings">Последние бронирования</h2>
-                    <a href="{% url 'dashboard:bookings' %}" style="font-size: 0.82rem; color: var(--primary);" data-t="dash_all_bookings">Все →</a>
+        <div class="dash-grid">
+            <section class="dash-panel">
+                <div class="dash-panel-head">
+                    <h2 class="dash-panel-title">Последние бронирования</h2>
+                    <a href="{% url 'dashboard:bookings' %}" style="font-size:0.82rem;color:var(--primary);font-weight:800;">Все</a>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse;">
+                <div class="dash-table-wrap">
+                    <table class="dash-table">
                         <thead>
-                            <tr style="background: var(--bg-secondary);">
-                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;" data-t="dash_col_code">Код</th>
-                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;" data-t="dash_col_route">Маршрут</th>
-                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;" data-t="dash_col_date">Дата</th>
-                                <th style="padding: 10px 16px; text-align: left; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;" data-t="dash_col_status">Статус</th>
-                                <th style="padding: 10px 16px; text-align: right; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;" data-t="dash_col_amount">Сумма</th>
+                            <tr>
+                                <th>Код</th>
+                                <th>Маршрут</th>
+                                <th>Дата</th>
+                                <th>Статус</th>
+                                <th class="num">Сумма</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for booking in recent_bookings %}
-                            <tr style="border-top: 1px solid var(--border);">
-                                <td style="padding: 12px 16px; font-size: 0.82rem; font-weight: 700; color: var(--primary);">#{{ booking.confirmation_code }}</td>
-                                <td style="padding: 12px 16px; font-size: 0.875rem;">{{ booking.route.title|truncatechars:28 }}</td>
-                                <td style="padding: 12px 16px; font-size: 0.82rem; color: var(--text-muted);">{{ booking.tour_date|date:"d.m.Y" }}</td>
-                                <td style="padding: 12px 16px;">
-                                    <span style="padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
-                                        {% if booking.status == 'confirmed' %}background: #ECFDF5; color: var(--success);
-                                        {% elif booking.status == 'pending' %}background: #FFFBEB; color: var(--warning);
-                                        {% elif booking.status == 'cancelled' %}background: #FEF2F2; color: var(--error);
-                                        {% else %}background: var(--bg-tertiary); color: var(--text-muted);{% endif %}
-                                    ">{{ booking.get_status_display }}</span>
+                            <tr>
+                                <td style="font-weight:800;color:var(--primary);">#{{ booking.confirmation_code }}</td>
+                                <td>{{ booking.route.title|truncatechars:32 }}</td>
+                                <td style="color:var(--text-muted);">{{ booking.tour_date|date:"d.m.Y" }}</td>
+                                <td>
+                                    <span class="status-pill {% if booking.status == 'confirmed' %}status-confirmed{% elif booking.status == 'pending' %}status-pending{% elif booking.status == 'cancelled' %}status-cancelled{% else %}status-default{% endif %}">
+                                        {{ booking.get_status_display }}
+                                    </span>
                                 </td>
-                                <td style="padding: 12px 16px; font-size: 0.875rem; font-weight: 600; text-align: right;">{{ booking.total_price|intcomma }} ₸</td>
+                                <td class="num">{{ booking.total_price|intcomma }} ₸</td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="5" style="padding: 32px; text-align: center; color: var(--text-muted);" data-t="dash_no_bookings">Нет бронирований</td></tr>
+                            <tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text-muted);">Нет бронирований</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
 
-            <!-- Top Routes & Pending Reviews -->
-            <div style="display: flex; flex-direction: column; gap: 24px;">
-                <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
-                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
-                        <h2 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;" data-t="dash_top_routes">🔥 Топ маршруты</h2>
+            <aside class="dash-side-stack">
+                <section class="dash-panel">
+                    <div class="dash-panel-head">
+                        <h2 class="dash-panel-title">Топ маршрутов</h2>
                     </div>
-                    <div style="padding: 8px 12px;">
+                    <div>
                         {% for route in top_routes %}
-                        <a href="{{ route.get_absolute_url }}" style="display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: var(--radius-sm); transition: background var(--transition);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
-                            <span style="width: 24px; height: 24px; background: var(--purple-100); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: var(--primary); flex-shrink: 0;">{{ forloop.counter }}</span>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ route.title }}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ route.booking_count }} бронирований</div>
+                        <a href="{{ route.get_absolute_url }}" class="dash-route-link">
+                            <span class="dash-rank">{{ forloop.counter }}</span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ route.title }}</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">{{ route.booking_count }} бронирований</div>
                             </div>
-                            <span style="font-size: 0.78rem; color: var(--accent);">⭐ {{ route.avg_rating }}</span>
+                            <span style="font-size:0.78rem;color:var(--accent);font-weight:800;">★ {{ route.avg_rating }}</span>
                         </a>
+                        {% empty %}
+                        <div style="padding:24px;color:var(--text-muted);">Пока нет маршрутов</div>
                         {% endfor %}
                     </div>
-                </div>
+                </section>
 
                 {% if pending_reviews %}
-                <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;">
-                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
-                        <h2 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;" data-t="dash_pending_reviews">⚠️ Ожидают модерации</h2>
-                        <a href="{% url 'dashboard:reviews' %}" style="font-size: 0.78rem; color: var(--primary);" data-t="dash_all_reviews">Все →</a>
+                <section class="dash-panel">
+                    <div class="dash-panel-head">
+                        <h2 class="dash-panel-title">Ожидают модерации</h2>
+                        <a href="{% url 'dashboard:reviews' %}" style="font-size:0.78rem;color:var(--primary);font-weight:800;">Все</a>
                     </div>
-                    <div style="padding: 8px 12px;">
+                    <div>
                         {% for review in pending_reviews|slice:":3" %}
-                        <div style="padding: 10px 8px; border-bottom: 1px solid var(--border);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <span style="font-size: 0.82rem; font-weight: 600;">{{ review.user.username }}</span>
-                                <span style="color: var(--accent); font-size: 0.82rem;">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% endif %}{% endfor %}</span>
-                            </div>
-                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">{{ review.comment|truncatechars:80 }}</p>
-                            <div style="display: flex; gap: 6px;">
-                                <button onclick="moderateReview({{ review.id }}, 'approve')" class="btn btn-sm" style="background: #ECFDF5; color: var(--success); padding: 4px 10px;" data-t="dash_approve">✅ Одобрить</button>
-                                <button onclick="moderateReview({{ review.id }}, 'reject')" class="btn btn-sm" style="background: #FEF2F2; color: var(--error); padding: 4px 10px;" data-t="dash_reject">❌ Отклонить</button>
+                        <div class="dash-review-item">
+                            <div style="flex:1;min-width:0;">
+                                <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;">
+                                    <span style="font-size:0.84rem;font-weight:800;">{{ review.user.username }}</span>
+                                    <span style="color:var(--accent);font-size:0.82rem;">{{ review.rating }} ★</span>
+                                </div>
+                                <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">{{ review.comment|truncatechars:86 }}</p>
+                                <div class="dash-actions">
+                                    <button onclick="moderateReview({{ review.id }}, 'approve')" class="btn btn-sm" style="background:#ECFDF5;color:var(--success);padding:6px 10px;">Одобрить</button>
+                                    <button onclick="moderateReview({{ review.id }}, 'reject')" class="btn btn-sm" style="background:#FEF2F2;color:var(--error);padding:6px 10px;">Отклонить</button>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                </div>
+                </section>
                 {% endif %}
-            </div>
+            </aside>
         </div>
     </main>
 </div>
@@ -181,12 +376,13 @@ async function moderateReview(id, action) {
             body: JSON.stringify({ action })
         });
         const data = await resp.json();
-        const tr = (typeof T !== 'undefined' && T[detectLang()]) ? T[detectLang()] : {};
         if (data.success) {
-            showToast(action === 'approve' ? (tr.dash_approve || 'Одобрен') : (tr.dash_reject || 'Отклонён'), 'success');
+            showToast(action === 'approve' ? 'Одобрено' : 'Отклонено', 'success');
             setTimeout(() => location.reload(), 800);
         }
-    } catch (e) { showToast('Ошибка', 'error'); }
+    } catch (e) {
+        showToast('Ошибка', 'error');
+    }
 }
 </script>
 {% endblock %}

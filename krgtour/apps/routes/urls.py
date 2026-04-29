@@ -11,5 +11,6 @@ urlpatterns = [
     path('routes/<slug:slug>/favorite/', views.toggle_favorite_view, name='toggle_favorite'),
     path('routes/<slug:slug>/geojson/', views.route_geojson_api, name='geojson'),
     path('map/', views.map_view, name='map'),
+    path('weather/', views.weather_view, name='weather'),
     path('api/routes/geojson/', views.all_routes_geojson_api, name='all_geojson'),
 ]
