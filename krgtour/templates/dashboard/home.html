@@ -236,6 +236,7 @@
         <a href="{% url 'dashboard:bookings' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'bookings' %}active{% endif %}"><span class="dash-icon">BK</span> Бронирования</a>
         <a href="{% url 'dashboard:reviews' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'reviews' %}active{% endif %}"><span class="dash-icon">RV</span> Отзывы</a>
         <div class="dash-nav-section">Система</div>
+        <a href="{% url 'routes:weather' %}" class="dash-nav-item"><span class="dash-icon">WX</span> Погода</a>
         <a href="{% url 'admin:index' %}" class="dash-nav-item"><span class="dash-icon">AD</span> Django Admin</a>
         <a href="{% url 'routes:home' %}" class="dash-nav-item"><span class="dash-icon">←</span> На сайт</a>
     </aside>

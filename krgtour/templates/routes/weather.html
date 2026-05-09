@@ -197,26 +197,26 @@
     <header class="weather-hero">
         <div class="weather-hero-inner">
             <div>
-                <h1 class="weather-title">Погода Карагандинской области</h1>
-                <p class="weather-subtitle">Прогноз для городов, районов и популярных зон отдыха. Данные обновляются автоматически при открытии страницы.</p>
+                <h1 class="weather-title" data-t="weather_title">Погода Карагандинской области</h1>
+                <p class="weather-subtitle" data-t="weather_subtitle">Прогноз для городов, районов и популярных зон отдыха. Данные обновляются автоматически при открытии страницы.</p>
             </div>
-            <div class="weather-updated" id="weatherUpdated">Обновление...</div>
+            <div class="weather-updated" id="weatherUpdated" data-t="weather_updating">Обновление...</div>
         </div>
     </header>
 
     <div class="weather-shell">
         <div class="weather-toolbar">
             <div class="weather-tabs" id="weatherTabs">
-                <button class="weather-tab active" data-filter="">Все</button>
-                <button class="weather-tab" data-filter="Город">Города</button>
-                <button class="weather-tab" data-filter="Район">Районы</button>
-                <button class="weather-tab" data-filter="Зона отдыха">Зоны отдыха</button>
+                <button class="weather-tab active" data-filter="" data-t="weather_all">Все</button>
+                <button class="weather-tab" data-filter="Город" data-t="weather_cities">Города</button>
+                <button class="weather-tab" data-filter="Район" data-t="weather_districts">Районы</button>
+                <button class="weather-tab" data-filter="Зона отдыха" data-t="weather_resorts">Зоны отдыха</button>
             </div>
-            <input class="form-input weather-search" id="weatherSearch" type="search" placeholder="Найти место...">
+            <input class="form-input weather-search" id="weatherSearch" type="search" placeholder="Найти место..." data-tp="weather_search_ph">
         </div>
 
         <div class="weather-grid" id="weatherGrid">
-            <div class="weather-loading">Загружаем прогноз...</div>
+            <div class="weather-loading" data-t="weather_loading">Загружаем прогноз...</div>
         </div>
     </div>
 </section>
@@ -229,30 +229,47 @@
     var weatherByName = {};
     var currentFilter = '';
     var searchQuery = '';
+    var lastUpdatedAt = null;
+    var weatherFailed = false;
 
     var grid = document.getElementById('weatherGrid');
     var updated = document.getElementById('weatherUpdated');
     var weatherCodeText = {
-        0: 'Ясно',
-        1: 'Преимущественно ясно',
-        2: 'Переменная облачность',
-        3: 'Пасмурно',
-        45: 'Туман',
-        48: 'Изморозь',
-        51: 'Слабая морось',
-        53: 'Морось',
-        55: 'Сильная морось',
-        61: 'Небольшой дождь',
-        63: 'Дождь',
-        65: 'Сильный дождь',
-        71: 'Небольшой снег',
-        73: 'Снег',
-        75: 'Сильный снег',
-        80: 'Кратковременный дождь',
-        81: 'Ливневый дождь',
-        82: 'Сильный ливень',
-        95: 'Гроза'
+        ru: { 0: 'Ясно', 1: 'Преимущественно ясно', 2: 'Переменная облачность', 3: 'Пасмурно', 45: 'Туман', 48: 'Изморозь', 51: 'Слабая морось', 53: 'Морось', 55: 'Сильная морось', 61: 'Небольшой дождь', 63: 'Дождь', 65: 'Сильный дождь', 71: 'Небольшой снег', 73: 'Снег', 75: 'Сильный снег', 80: 'Кратковременный дождь', 81: 'Ливневый дождь', 82: 'Сильный ливень', 95: 'Гроза' },
+        kk: { 0: 'Ашық', 1: 'Көбіне ашық', 2: 'Ауыспалы бұлтты', 3: 'Бұлтты', 45: 'Тұман', 48: 'Қырау', 51: 'Әлсіз сіркіреме', 53: 'Сіркіреме', 55: 'Қатты сіркіреме', 61: 'Аздаған жаңбыр', 63: 'Жаңбыр', 65: 'Қатты жаңбыр', 71: 'Аздаған қар', 73: 'Қар', 75: 'Қатты қар', 80: 'Өткінші жаңбыр', 81: 'Нөсер жаңбыр', 82: 'Қатты нөсер', 95: 'Найзағай' },
+        en: { 0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Rime fog', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle', 61: 'Light rain', 63: 'Rain', 65: 'Heavy rain', 71: 'Light snow', 73: 'Snow', 75: 'Heavy snow', 80: 'Rain showers', 81: 'Heavy showers', 82: 'Violent showers', 95: 'Thunderstorm' }
     };
+    var typeLabels = {
+        ru: { 'Город': 'Город', 'Район': 'Район', 'Зона отдыха': 'Зона отдыха' },
+        kk: { 'Город': 'Қала', 'Район': 'Аудан', 'Зона отдыха': 'Демалыс аймағы' },
+        en: { 'Город': 'City', 'Район': 'District', 'Зона отдыха': 'Recreation area' }
+    };
+
+    function tr(key) {
+        var lang = window.detectLang ? detectLang() : 'ru';
+        return (window.T && T[lang] && T[lang][key]) || (window.T && T.ru && T.ru[key]) || key;
+    }
+
+    function currentLang() {
+        return window.detectLang ? detectLang() : 'ru';
+    }
+
+    function updateStatusText() {
+        if (weatherFailed) {
+            updated.textContent = tr('weather_unavailable');
+            return;
+        }
+        if (!lastUpdatedAt) {
+            updated.textContent = tr('weather_updating');
+            return;
+        }
+        updated.textContent = tr('weather_updated') + ': ' + lastUpdatedAt.toLocaleString(currentLang() === 'en' ? 'en-US' : currentLang() === 'kk' ? 'kk-KZ' : 'ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
 
     function render() {
         var items = locations.filter(function (location) {
@@ -262,29 +279,31 @@
         });
 
         if (!items.length) {
-            grid.innerHTML = '<div class="weather-empty">Ничего не найдено</div>';
+            grid.innerHTML = '<div class="weather-empty">' + tr('weather_empty') + '</div>';
             return;
         }
 
         grid.innerHTML = items.map(function (location) {
             var weather = weatherByName[location.name];
+            var lang = currentLang();
+            var typeText = (typeLabels[lang] || typeLabels.ru)[location.type] || location.type;
             if (!weather) {
                 return '<article class="weather-card">' +
-                    '<div class="weather-card-head"><div><div class="weather-place">' + location.name + '</div><span class="weather-type">' + location.type + '</span></div></div>' +
-                    '<div class="weather-condition">Нет данных</div>' +
+                    '<div class="weather-card-head"><div><div class="weather-place">' + location.name + '</div><span class="weather-type">' + typeText + '</span></div></div>' +
+                    '<div class="weather-condition">' + tr('weather_no_data') + '</div>' +
                 '</article>';
             }
 
             return '<article class="weather-card">' +
                 '<div class="weather-card-head">' +
-                    '<div><div class="weather-place">' + location.name + '</div><span class="weather-type">' + location.type + '</span></div>' +
+                    '<div><div class="weather-place">' + location.name + '</div><span class="weather-type">' + typeText + '</span></div>' +
                     '<div class="weather-temp">' + Math.round(weather.temperature_2m) + '°</div>' +
                 '</div>' +
-                '<div class="weather-condition">' + (weatherCodeText[weather.weather_code] || 'Погодные условия') + '</div>' +
+                '<div class="weather-condition">' + ((weatherCodeText[lang] || weatherCodeText.ru)[weather.weather_code] || tr('weather_conditions')) + '</div>' +
                 '<div class="weather-metrics">' +
-                    '<div class="weather-metric"><span class="weather-metric-label">Ветер</span><span class="weather-metric-value">' + Math.round(weather.wind_speed_10m) + ' км/ч</span></div>' +
-                    '<div class="weather-metric"><span class="weather-metric-label">Осадки</span><span class="weather-metric-value">' + (weather.precipitation || 0) + ' мм</span></div>' +
-                    '<div class="weather-metric"><span class="weather-metric-label">Ощущ.</span><span class="weather-metric-value">' + Math.round(weather.apparent_temperature) + '°</span></div>' +
+                    '<div class="weather-metric"><span class="weather-metric-label">' + tr('weather_wind') + '</span><span class="weather-metric-value">' + Math.round(weather.wind_speed_10m) + ' ' + tr('weather_kmh') + '</span></div>' +
+                    '<div class="weather-metric"><span class="weather-metric-label">' + tr('weather_precip') + '</span><span class="weather-metric-value">' + (weather.precipitation || 0) + ' ' + tr('weather_mm') + '</span></div>' +
+                    '<div class="weather-metric"><span class="weather-metric-label">' + tr('weather_feels') + '</span><span class="weather-metric-value">' + Math.round(weather.apparent_temperature) + '°</span></div>' +
                 '</div>' +
             '</article>';
         }).join('');
@@ -309,17 +328,15 @@
                         weatherByName[locations[index].name] = row.current;
                     }
                 });
-                updated.textContent = 'Обновлено: ' + new Date().toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                weatherFailed = false;
+                lastUpdatedAt = new Date();
+                updateStatusText();
                 render();
             })
             .catch(function () {
-                updated.textContent = 'Погода временно недоступна';
-                grid.innerHTML = '<div class="weather-empty">Не удалось загрузить прогноз. Проверьте подключение и обновите страницу.</div>';
+                weatherFailed = true;
+                updateStatusText();
+                grid.innerHTML = '<div class="weather-empty">' + tr('weather_load_error') + '</div>';
             });
     }
 
@@ -338,6 +355,10 @@
     });
 
     loadWeather();
+    document.addEventListener('kgd:langchange', function () {
+        updateStatusText();
+        render();
+    });
 })();
 </script>
 {% endblock %}

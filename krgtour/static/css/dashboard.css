@@ -1,0 +1,189 @@
+/* Shared dashboard layer loaded after per-page styles. */
+
+body:has(.dashboard-layout) {
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.08), transparent 34rem),
+    #F8FAFC;
+}
+
+.dashboard-layout {
+  min-height: calc(100vh - var(--nav-height)) !important;
+  margin-top: var(--nav-height) !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.72), rgba(248,250,252,0.95)),
+    #F8FAFC !important;
+}
+
+.dashboard-sidebar {
+  width: 264px !important;
+  background: linear-gradient(180deg, #111827 0%, #1E1B4B 100%) !important;
+  padding: 22px 14px !important;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 18px 0 42px rgba(15, 23, 42, 0.10);
+}
+
+.dash-nav-logo {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: white;
+  padding: 8px 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-nav-logo::before {
+  content: "KG";
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.dash-nav-section {
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.38) !important;
+  padding: 16px 14px 7px !important;
+}
+
+.dash-nav-item {
+  min-height: 42px;
+  border: 1px solid transparent;
+  color: rgba(255,255,255,0.68) !important;
+}
+
+.dash-nav-item:hover {
+  background: rgba(255,255,255,0.10) !important;
+  color: white !important;
+  border-color: rgba(255,255,255,0.10);
+}
+
+.dash-nav-item.active {
+  background: linear-gradient(135deg, var(--primary), #4F46E5) !important;
+  color: white !important;
+  box-shadow: 0 10px 26px rgba(79, 70, 229, 0.30);
+}
+
+.dashboard-main {
+  background: transparent !important;
+  padding: 34px !important;
+}
+
+.dashboard-main > div[style*="justify-content: space-between"],
+.dashboard-main > div[style*="justify-content:space-between"],
+.dash-header {
+  padding: 18px 20px !important;
+  background: rgba(255,255,255,0.82) !important;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-main h1 {
+  color: #0F172A;
+  letter-spacing: 0;
+}
+
+.dash-stat-card,
+.dash-panel,
+.form-section,
+.dashboard-main > div[style*="background: white"],
+.review-dashboard-card {
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+.dash-stat-card,
+.dashboard-main > div[style*="background: white"] {
+  border-radius: var(--radius-lg);
+}
+
+.dash-table th,
+.dashboard-main table th {
+  background: #F8FAFC !important;
+  color: #64748B !important;
+  letter-spacing: 0.05em;
+}
+
+.dash-table td,
+.dashboard-main table td {
+  border-top-color: #E2E8F0 !important;
+}
+
+.dashboard-main table tbody tr {
+  transition: background var(--transition), transform var(--transition);
+}
+
+.dashboard-main table tbody tr:hover {
+  background: #F8FAFC !important;
+}
+
+.dashboard-main select,
+.dashboard-main input,
+.dashboard-main textarea {
+  border-color: #CBD5E1;
+}
+
+#adminEditorMap {
+  border: 1px solid #CBD5E1;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.65);
+}
+
+@media (min-width: 1025px) {
+  .dashboard-layout {
+    display: grid !important;
+    grid-template-columns: 264px minmax(0, 1fr);
+  }
+
+  .dashboard-layout .dashboard-sidebar {
+    position: sticky !important;
+    top: var(--nav-height) !important;
+    height: calc(100vh - var(--nav-height)) !important;
+    overflow-y: auto;
+  }
+
+  .dashboard-layout .dashboard-main {
+    margin-left: 0 !important;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    display: block !important;
+  }
+
+  .dashboard-sidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .dashboard-main {
+    margin-left: 0 !important;
+    padding: 22px 16px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-main > div[style*="justify-content: space-between"],
+  .dashboard-main > div[style*="justify-content:space-between"],
+  .dash-header {
+    padding: 16px !important;
+  }
+
+  .dashboard-main table {
+    min-width: 760px;
+  }
+}
